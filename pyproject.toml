@@ -1,36 +1,36 @@
 [project]
-name = "fitness-mcp-server"
+name = "fitness-mcp-hub"
 version = "0.1.0"
-description = "Async Model Context Protocol (MCP) hub for wearable biometrics, Hevy workouts, and nutrition."
+description = "Asynchronous MCP Gateway / BFF service aggregating personal health, strength training, and nutrition telemetry."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
-    { name = "Health & Fitness MCP Hub Team" }
+    { name = "Senior AI Infrastructure Engineer" }
 ]
 dependencies = [
     "fastmcp>=3.0.0",
     "httpx>=0.27.0",
-    "pydantic>=2.0.0",
-    "pydantic-settings>=2.0.0",
-    "tenacity>=8.2.0",
+    "mcp>=1.2.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.2.0",
 ]
 
 [project.scripts]
-fitness-mcp-server = "src.server:main"
+fitness-mcp-hub = "fitness_hub.server:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src/fitness_hub"]
 
 [dependency-groups]
 dev = [
     "mypy>=1.10.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
-    "respx>=0.22.0",
+    "respx>=0.21.0",
     "ruff>=0.5.0",
 ]
 
@@ -38,7 +38,7 @@ dev = [
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = ["src"]
 
 [tool.ruff]
 line-length = 100
@@ -56,8 +56,8 @@ select = [
     "SIM",    # flake8-simplify
 ]
 ignore = [
-    "E501",   # line length handled by formatter
-    "B008",   # do not perform function calls in argument defaults (fastmcp / pydantic defaults)
+    "E501",   # line length
+    "B008",   # function calls in argument defaults (FastMCP/Pydantic)
 ]
 
 [tool.ruff.format]
@@ -66,6 +66,8 @@ indent-style = "space"
 
 [tool.mypy]
 python_version = "3.11"
+mypy_path = "src"
+explicit_package_bases = true
 strict = true
 warn_unused_configs = true
 warn_redundant_casts = true

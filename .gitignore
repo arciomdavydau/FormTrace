@@ -1,4 +1,4 @@
-# Python-generated files
+# Python artifacts
 __pycache__/
 *.py[oc]
 build/
@@ -6,21 +6,21 @@ dist/
 wheels/
 *.egg-info/
 
-# Virtual environments
+# Environments
 .venv/
 env/
 venv/
 
-# Environment variables & secrets
+# Secrets & Environment variables
 .env
 *.local.env
 
-# Testing & Linting caches
+# Testing & quality caches
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
 
 # Local data persistence
 data/
-*.sqlite3
+*.json.bak
 *.db
