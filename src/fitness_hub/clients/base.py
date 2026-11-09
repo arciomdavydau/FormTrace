@@ -133,7 +133,7 @@ class BaseAsyncClient:
 
                 if response.status_code in {401, 403}:
                     raise AuthenticationError(
-                        f"Authentication failed ({response.status_code}) on {url}: {response.text}",
+                        f"Authentication failed ({response.status_code}) on {url}",
                         status_code=response.status_code,
                     )
 
@@ -170,7 +170,7 @@ class BaseAsyncClient:
                         await asyncio.sleep(delay)
                         continue
                     raise UpstreamAPIError(
-                        f"Upstream service unavailable ({response.status_code}) on {url}: {response.text}",
+                        f"Upstream service unavailable ({response.status_code}) on {url}",
                         status_code=response.status_code,
                     )
 

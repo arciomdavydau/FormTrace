@@ -13,12 +13,15 @@ venv/
 
 # Secrets & Environment variables
 .env
+.env.*
+!.env.example
 *.local.env
 
 # Testing & quality caches
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+.idea/
 
 # Local data persistence
 data/

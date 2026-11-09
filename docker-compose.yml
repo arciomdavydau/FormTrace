@@ -1,28 +1,9 @@
-version: "3.8"
-
+# Optional local stdio container. This does not expose a network MCP server.
 services:
-  fitness-mcp-server:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: fitness-mcp-server
-    restart: unless-stopped
-    ports:
-      - "8000:8000"
+  fitness-hub:
+    build: .
+    stdin_open: true
     environment:
-      - MCP_SERVER_NAME=fitness-mcp-server
-      - MCP_TRANSPORT=sse
-      - MCP_HOST=0.0.0.0
-      - MCP_PORT=8000
-      - LOG_LEVEL=INFO
-      - OPEN_WEARABLES_API_URL=${OPEN_WEARABLES_API_URL:-https://example.invalid}
-      - OPEN_WEARABLES_API_KEY=${OPEN_WEARABLES_API_KEY}
-      - OPEN_WEARABLES_DEFAULT_USER_ID=${OPEN_WEARABLES_DEFAULT_USER_ID:-}
-      - HEVY_API_URL=${HEVY_API_URL:-https://api.hevyapp.com/v1}
-      - HEVY_API_KEY=${HEVY_API_KEY}
-      - NUTRITION_PROVIDER=${NUTRITION_PROVIDER:-manual}
-      - NUTRITION_DATA_PATH=/app/data/nutrition_logs.json
-    volumes:
-      - ./data:/app/data
-    env_file:
-      - .env
+      FITNESS_DEMO_MODE: ${FITNESS_DEMO_MODE:-true}
+      FITNESS_TIMEZONE: ${FITNESS_TIMEZONE:-Europe/Warsaw}
+      HEVY_API_KEY: ${HEVY_API_KEY:-}

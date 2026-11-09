@@ -1,16 +1,13 @@
 [project]
 name = "fitness-mcp-hub"
 version = "0.1.0"
-description = "Asynchronous MCP Gateway / BFF service aggregating personal health, strength training, and nutrition telemetry."
+description = "Read-only strength training analytics for Hevy and MCP clients."
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [
-    { name = "Senior AI Infrastructure Engineer" }
-]
 dependencies = [
-    "fastmcp>=3.0.0",
+    "fastmcp>=4.1,<5",
     "httpx>=0.27.0",
-    "mcp>=1.2.0",
+    "mcp>=2.2,<3",
     "pydantic>=2.7.0",
     "pydantic-settings>=2.2.0",
 ]

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fitness_hub.clients.base import BaseAsyncClient
+from fitness_hub.clients.base import BaseAsyncClient, UpstreamAPIError
 from fitness_hub.config import Settings, get_settings
 from fitness_hub.models.workouts import (
     ExerciseLog,
@@ -48,21 +48,16 @@ class HevyClient(BaseAsyncClient):
         }
         if self.api_key:
             hdrs["api-key"] = self.api_key
-            hdrs["x-api-key"] = self.api_key
         return hdrs
 
     def _parse_set_type(self, raw_type: str | None) -> SetType:
         """Map raw string from Hevy to SetType enum safely."""
-        if not raw_type:
-            return SetType.NORMAL
-        val = raw_type.lower().replace("_", "").replace("-", "")
-        if "warmup" in val:
-            return SetType.WARMUP
-        if "failure" in val:
-            return SetType.FAILURE
-        if "drop" in val:
-            return SetType.DROPSET
-        return SetType.NORMAL
+        if raw_type is None:
+            return SetType.UNKNOWN
+        try:
+            return SetType(raw_type.lower())
+        except ValueError:
+            return SetType.UNKNOWN
 
     def _parse_workout(self, item: dict[str, Any]) -> WorkoutSession:
         """Parse nested Hevy workout JSON into structured WorkoutSession."""
@@ -106,26 +101,54 @@ class HevyClient(BaseAsyncClient):
             exercises=exercises,
         )
 
-    async def get_recent_workouts(self, limit: int = 5) -> list[WorkoutSession]:
-        """
-        Fetch recent workouts from Hevy.
-        Hits GET /workouts?page=1&pageSize={limit}.
-        """
-        params = {"page": 1, "pageSize": limit}
-        path = self._endpoint("workouts")
-        data = await self.request("GET", path, headers=self.headers, params=params)
+    async def _get_all_pages(
+        self, endpoint: str, items_key: str, page_size: int
+    ) -> list[dict[str, Any]]:
+        """Fetch every page or fail instead of treating incomplete data as a full history."""
+        page = 1
+        expected_page_count: int | None = None
+        items: list[dict[str, Any]] = []
+        while True:
+            data = await self.request(
+                "GET",
+                self._endpoint(endpoint),
+                headers=self.headers,
+                params={"page": page, "pageSize": page_size},
+            )
+            if not isinstance(data, dict):
+                raise UpstreamAPIError(f"Invalid Hevy response for {endpoint}")
+            page_count = data.get("page_count")
+            response_page = data.get("page")
+            batch = data.get(items_key)
+            if (
+                not isinstance(page_count, int)
+                or isinstance(page_count, bool)
+                or page_count < 0
+                or response_page != page
+                or not isinstance(batch, list)
+                or not all(isinstance(item, dict) for item in batch)
+            ):
+                raise UpstreamAPIError(f"Invalid Hevy pagination response for {endpoint}")
+            if expected_page_count is None:
+                expected_page_count = page_count
+            elif page_count != expected_page_count:
+                raise UpstreamAPIError(f"Hevy pagination changed while loading {endpoint}; retry")
+            if page_count == 0 and batch:
+                raise UpstreamAPIError(f"Invalid empty-page response for {endpoint}")
+            items.extend(batch)
+            if page >= page_count:
+                return items
+            page += 1
 
-        raw_list: list[dict[str, Any]] = []
-        if isinstance(data, dict):
-            raw_list = data.get("workouts", [])
-        elif isinstance(data, list):
-            raw_list = data
+    async def get_all_workouts(self) -> list[WorkoutSession]:
+        """Fetch full workout history; Hevy supports a maximum of 10 per page."""
+        items = await self._get_all_pages("workouts", "workouts", 10)
+        workouts = [self._parse_workout(item) for item in items]
+        ids = [workout.id for workout in workouts]
+        if any(not item for item in ids) or len(set(ids)) != len(ids):
+            raise UpstreamAPIError("Missing or duplicate Hevy workout IDs; retry")
+        return workouts
 
-        return [self._parse_workout(w) for w in raw_list]
-
-    async def get_workout(self, workout_id: str) -> WorkoutSession:
-        """Fetch details of a specific workout by ID."""
-        path = self._endpoint(f"workouts/{workout_id}")
-        data = await self.request("GET", path, headers=self.headers)
-        raw = data.get("workout", data) if isinstance(data, dict) else {}
-        return self._parse_workout(raw)
+    async def get_exercise_templates(self) -> list[dict[str, Any]]:
+        """Fetch Hevy's exercise templates and their muscle groups."""
+        return await self._get_all_pages("exercise_templates", "exercise_templates", 100)
