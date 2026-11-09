@@ -59,6 +59,29 @@ class HevyClient(BaseAsyncClient):
         except ValueError:
             return SetType.UNKNOWN
 
+    async def api_request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        body: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Call a specific Hevy operation and require an object response."""
+        result = await self.request(
+            method,
+            self._endpoint(path),
+            headers=self.headers,
+            params=params,
+            json=body,
+            accept_plain_identifier=(
+                method.upper() == "POST" and path.strip("/") == "exercise_templates"
+            ),
+        )
+        if not isinstance(result, dict):
+            raise UpstreamAPIError("Unexpected Hevy API response format")
+        return result
+
     def _parse_workout(self, item: dict[str, Any]) -> WorkoutSession:
         """Parse nested Hevy workout JSON into structured WorkoutSession."""
         exercises: list[ExerciseLog] = []
@@ -78,6 +101,9 @@ class HevyClient(BaseAsyncClient):
                         else None,
                         duration_seconds=float(s["duration_seconds"])
                         if s.get("duration_seconds") is not None
+                        else None,
+                        custom_metric=float(s["custom_metric"])
+                        if s.get("custom_metric") is not None
                         else None,
                     )
                 )

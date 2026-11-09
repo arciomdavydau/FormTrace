@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from typing import Any
 
 import httpx
 
 logger = logging.getLogger(__name__)
+_EXERCISE_ID = re.compile(
+    r"(?:[0-9]+|[0-9a-fA-F]{8}|[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"
+)
 
 
 class UpstreamAPIError(Exception):
@@ -21,7 +25,7 @@ class UpstreamAPIError(Exception):
 
 
 class AuthenticationError(UpstreamAPIError):
-    """Raised when authentication with an upstream API fails (401/403)."""
+    """Raised when authentication with an upstream API fails (401)."""
 
 
 class NotFoundError(UpstreamAPIError):
@@ -94,6 +98,7 @@ class BaseAsyncClient:
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         json: Any = None,
+        accept_plain_identifier: bool = False,
         **kwargs: Any,
     ) -> dict[str, Any] | list[Any]:
         """
@@ -111,6 +116,8 @@ class BaseAsyncClient:
         if params:
             clean_params = {k: v for k, v in params.items() if v is not None}
 
+        # Retrying writes after a timeout or gateway error can create duplicates.
+        attempt_limit = max(1, self.max_retries) if method.upper() in {"GET", "HEAD"} else 1
         attempt = 0
         while True:
             attempt += 1
@@ -120,7 +127,7 @@ class BaseAsyncClient:
                     method,
                     url,
                     attempt,
-                    self.max_retries,
+                    attempt_limit,
                 )
                 response = await client.request(
                     method=method,
@@ -131,10 +138,16 @@ class BaseAsyncClient:
                     **kwargs,
                 )
 
-                if response.status_code in {401, 403}:
+                if response.status_code == 401:
                     raise AuthenticationError(
                         f"Authentication failed ({response.status_code}) on {url}",
                         status_code=response.status_code,
+                    )
+
+                if response.status_code == 403:
+                    raise UpstreamAPIError(
+                        f"Access denied or operation unavailable (403) on {url}",
+                        status_code=403,
                     )
 
                 if response.status_code == 404:
@@ -148,7 +161,7 @@ class BaseAsyncClient:
                     retry_after = (
                         float(retry_header) if retry_header and retry_header.isdigit() else None
                     )
-                    if attempt < self.max_retries:
+                    if attempt < attempt_limit:
                         delay = retry_after or (self.backoff_factor * (2 ** (attempt - 1)))
                         logger.warning("Rate limit hit on %s. Retrying in %.2fs", url, delay)
                         await asyncio.sleep(delay)
@@ -158,8 +171,8 @@ class BaseAsyncClient:
                         retry_after=retry_after,
                     )
 
-                if response.status_code in {502, 503, 504}:
-                    if attempt < self.max_retries:
+                if response.status_code in {500, 502, 503, 504}:
+                    if attempt < attempt_limit:
                         delay = self.backoff_factor * (2 ** (attempt - 1))
                         logger.warning(
                             "Server error %d on %s. Retrying in %.2fs",
@@ -169,8 +182,13 @@ class BaseAsyncClient:
                         )
                         await asyncio.sleep(delay)
                         continue
+                    outcome = (
+                        " The write may have succeeded; verify before retrying."
+                        if attempt_limit == 1 and method.upper() not in {"GET", "HEAD"}
+                        else ""
+                    )
                     raise UpstreamAPIError(
-                        f"Upstream service unavailable ({response.status_code}) on {url}",
+                        f"Upstream service unavailable ({response.status_code}) on {url}.{outcome}",
                         status_code=response.status_code,
                     )
 
@@ -179,10 +197,27 @@ class BaseAsyncClient:
                 if response.status_code == 204 or not response.content:
                     return {}
 
-                return response.json()  # type: ignore[no-any-return]
+                try:
+                    decoded = response.json()
+                    if accept_plain_identifier and isinstance(decoded, (str, int)):
+                        identifier = str(decoded)
+                        if _EXERCISE_ID.fullmatch(identifier):
+                            return {"id": identifier}
+                    return decoded  # type: ignore[no-any-return]
+                except ValueError as err:
+                    if accept_plain_identifier:
+                        identifier = response.text.strip()
+                        if _EXERCISE_ID.fullmatch(identifier):
+                            return {"id": identifier}
+                    outcome = (
+                        " The write may have succeeded; verify before retrying."
+                        if method.upper() not in {"GET", "HEAD"}
+                        else ""
+                    )
+                    raise UpstreamAPIError(f"Invalid JSON response from {url}.{outcome}") from err
 
             except (httpx.TimeoutException, httpx.NetworkError) as err:
-                if attempt < self.max_retries:
+                if attempt < attempt_limit:
                     delay = self.backoff_factor * (2 ** (attempt - 1))
                     logger.warning(
                         "Network/Timeout error (%s) contacting %s. Retrying in %.2fs",
@@ -192,6 +227,11 @@ class BaseAsyncClient:
                     )
                     await asyncio.sleep(delay)
                     continue
+                outcome = (
+                    " The write may have succeeded; verify before retrying."
+                    if method.upper() not in {"GET", "HEAD"}
+                    else ""
+                )
                 raise UpstreamAPIError(
-                    f"Network error after {self.max_retries} attempts for {url}: {err}"
+                    f"Network error after {attempt_limit} attempt(s) for {url}.{outcome}"
                 ) from err

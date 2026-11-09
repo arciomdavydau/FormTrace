@@ -7,12 +7,13 @@ This is a direction for an iterative personal project, not a schedule. Release n
 **Goal:** answer useful questions about strength training through an MCP-compatible agent.
 
 - Read completed workouts and exercise templates from Hevy.
+- Support the Hevy API's documented create/update operations for workouts and routines, plus creating custom exercises and routine folders.
 - Summarize training and recorded working sets by muscle group for a period.
 - Inspect a workout and compare the recorded history of an exercise.
 - Provide a synthetic demo, tests, and instructions to run locally.
 - Continue validating results against actual usage and improve reliability where needed.
 
-The current implementation is read-only and works locally. Remote ChatGPT connectivity is a separate piece of work, not a current capability.
+The implementation works locally. Connecting it privately to ChatGPT is a remaining step for the first release, not a current capability. Read and write operations have also been exercised against a real account with explicitly marked test data; automated tests use a mocked API and do not alter a real account.
 
 ## Second release: nutrition and body weight
 

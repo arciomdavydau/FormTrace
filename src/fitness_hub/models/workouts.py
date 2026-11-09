@@ -31,6 +31,7 @@ class ExerciseSet(BaseModel):
         default=None, description="Distance for loaded carries/cardio"
     )
     duration_seconds: float | None = Field(default=None, description="Duration in seconds")
+    custom_metric: float | None = Field(default=None, description="Additional recorded metric")
 
     @property
     def is_working_set(self) -> bool:

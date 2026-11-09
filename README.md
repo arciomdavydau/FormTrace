@@ -1,6 +1,6 @@
 # Fitness MCP Hub
 
-A personal, read-only fitness analytics service. The first version reads strength-training data from Hevy, calculates workout summaries in Python, and exposes them to MCP-compatible AI assistants. Future versions may add nutrition, body weight, Apple Health, and a user interface.
+A personal fitness MCP server. The first version provides Hevy training and routine operations alongside workout analytics. Future versions may add nutrition, body weight, Apple Health, and a user interface.
 
 This is an evolving personal project, not a medical or coaching system. Results are limited by what was actually recorded.
 
@@ -9,8 +9,10 @@ This is an evolving personal project, not a medical or coaching system. Results 
 - Summarizes a period of workouts alongside the previous equal-length period.
 - Counts working sets by Hevy's primary muscle group and separately shows secondary involvement.
 - Shows recorded working sets for a particular exercise and details for a workout.
+- Reads workouts, routines, folders, exercise templates, workout events, and exercise history directly from Hevy.
+- Previews and, on request, creates or updates workouts and routines, and creates exercise templates and routine folders.
 - Reports missing classifications, unknown set types, the data source, and when data was fetched.
-- Includes a demo mode with entirely fictional workouts; no credentials or network access are needed.
+- Includes a demo mode with fictional workouts and write previews; no credentials or network access are needed.
 
 Hevy's labels are an approximation of which muscles an exercise involves, not a measurement of muscle effort. Secondary involvement overlaps primary sets. A working set count does not establish training intensity or muscle growth. Missing RPE remains missing.
 
@@ -55,16 +57,30 @@ cp .env.example .env
 uv run fitness-mcp-hub
 ```
 
-The server reads but never writes Hevy data. This restriction applies to this server's tools; the Hevy API key itself may have broader permissions. Keep it private and rotate it if exposed. `FITNESS_TIMEZONE` sets the default IANA timezone, currently `Europe/Warsaw`.
+The server can write to Hevy when a write tool is called with `dry_run=false`. The Hevy API key may have broader permissions than the tools expose. Keep it private and rotate it if exposed. `FITNESS_TIMEZONE` sets the default IANA timezone, currently `Europe/Warsaw`.
 
 ## MCP tools
 
-| Tool | Purpose |
+| Analytics tool | Purpose |
 | --- | --- |
 | `get_training_report(start_date, end_date, timezone, refresh)` | Inclusive date-range summary and previous equal-length period. `refresh=true` bypasses the memory cache. |
 | `search_exercises(query)` | Find exercise template IDs by name. |
 | `get_exercise_progression(exercise_id, start_date, end_date, timezone)` | Show recorded working sets, weights, repetitions and RPE for one exercise. |
 | `get_workout_details(workout_id)` | Inspect the exercises and sets for one workout. |
+
+Hevy API tools expose the training-related operations documented by Hevy:
+
+| Area | Read tools | Write tools |
+| --- | --- | --- |
+| Profile | `get_hevy_profile` | — |
+| Workouts | `list_hevy_workouts`, `get_hevy_workout`, `get_hevy_workout_count`, `list_hevy_workout_events` | `create_hevy_workout`, `update_hevy_workout` |
+| Routines | `list_hevy_routines`, `get_hevy_routine` | `create_hevy_routine`, `update_hevy_routine` |
+| Exercises | `list_hevy_exercise_templates`, `get_hevy_exercise_template`, `get_hevy_exercise_history` | `create_hevy_exercise_template` |
+| Routine folders | `list_hevy_routine_folders`, `get_hevy_routine_folder` | `create_hevy_routine_folder` |
+
+Write tools default to `dry_run=true`: they return the intended payload and do not contact Hevy. Set `dry_run=false` only when the user has requested the change. MCP clients may provide their own approval flow; tool annotations are hints rather than an access-control mechanism. New workouts default to private. Workout and routine updates require complete payloads and may overwrite existing fields. Folder creation changes the folder order in Hevy.
+
+Writes are never automatically retried after a timeout or server error because the remote operation may already have succeeded. Check Hevy before retrying. A write attempt invalidates the training snapshot. The demo source supports reads and write previews, not actual writes. Deleting workouts, routines, or folders is not exposed because the documented Hevy API currently does not provide those operations. Body measurements remain outside the first version.
 
 Dates use `YYYY-MM-DD`. A workout is assigned to the local date when it started. Results include the provider and fetch time. A successful empty report is distinct from a source error.
 
@@ -77,9 +93,10 @@ uv sync
 uv run pytest -q
 uv run ruff check .
 uv run ruff format --check .
+uv run mypy src
 ```
 
-Tests use mock or demo data; they do not need a Hevy key. Before sharing a development transcript, check it for secrets and health data. The optional Docker setup is for stdio only and has not yet been validated for this version.
+Tests use mock or demo data; they do not need a Hevy key or write to a real account. Before sharing a development transcript, check it for secrets and health data. The optional Docker setup is for stdio only and has not yet been validated for this version.
 
 ## Project documentation
 

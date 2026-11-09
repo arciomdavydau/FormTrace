@@ -36,6 +36,14 @@ MUSCLES = {
 class WorkoutSource(Protocol):
     async def get_all_workouts(self) -> list[WorkoutSession]: ...
     async def get_exercise_templates(self) -> list[dict[str, Any]]: ...
+    async def api_request(
+        self,
+        method: str,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        body: dict[str, Any] | None = None,
+    ) -> dict[str, Any]: ...
     async def close(self) -> None: ...
 
 
@@ -142,6 +150,12 @@ class TrainingService:
     async def close(self) -> None:
         await self.source.close()
 
+    async def invalidate(self) -> None:
+        """Ensure a later report does not reuse a snapshot after a write attempt."""
+        async with self._lock:
+            self._snapshot = None
+            self._cached_at = 0.0
+
     async def snapshot(self, refresh: bool = False) -> Snapshot:
         async with self._lock:
             if (
@@ -246,6 +260,7 @@ class TrainingService:
                                     "rpe": s.rpe,
                                     "duration_seconds": s.duration_seconds,
                                     "distance_meters": s.distance_meters,
+                                    "custom_metric": s.custom_metric,
                                 }
                                 for s in exercise.sets
                                 if s.is_working_set

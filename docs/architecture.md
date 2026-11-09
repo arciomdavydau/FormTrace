@@ -20,7 +20,7 @@ A future user interface can call the same application services as the MCP interf
 
 ## Current implementation: training
 
-The current application is a single-user, read-only Python service:
+The current application is a single-user Python service for Hevy training and routines:
 
 ```text
 MCP client
@@ -29,7 +29,7 @@ MCP client
 MCP tools (FastMCP)
     │
     ▼
-Training service ──► workout summaries and exercise history
+Application services ──► Hevy operations and workout analytics
     │
     ▼
 Hevy client or synthetic demo source
@@ -39,7 +39,7 @@ The service uses Python, the `fastmcp` library, `httpx`, Pydantic and `uv`. Auto
 
 The Hevy client fetches workout pages and exercise templates. The API limits the size of workout pages, so the current implementation loads all pages and filters by date locally. A failed page prevents a successful complete report. Since Hevy data can change while pages are being read, the result is not guaranteed to be an atomic snapshot.
 
-A process-local cache reduces repeated reads; each result includes its provider and fetch time. It is not persistent storage, and separate processes do not share it. SQLite or another persistence layer can be considered when there is a demonstrated need, with update and deletion handling designed explicitly.
+A process-local cache reduces repeated analytical reads; each result includes its provider and fetch time. It is invalidated after a write attempt, including an uncertain outcome. It is not persistent storage, and separate processes do not share it. SQLite or another persistence layer can be considered when there is a demonstrated need, with update and deletion handling designed explicitly.
 
 ## Training calculations
 
@@ -51,9 +51,9 @@ A process-local cache reduces repeated reads; each result includes its provider 
 
 ## Interfaces and boundaries
 
-The current MCP server exposes a period report, exercise search, exercise history, and workout details. It runs locally over stdio. Remote access, authentication, a user interface, and multi-user isolation are not implemented. A future remote deployment must select and validate a compatible protected connection before exposing personal data.
+The current MCP server exposes analytical tools and the documented training-related Hevy operations: reading workouts, routines, exercise templates, folders, and history; creating workouts, routines, templates, and folders; and updating workouts and routines. It runs locally over stdio. ChatGPT connectivity through a protected connection is a desired final step for the first release, but has not yet been configured. A user interface and multi-user isolation are not implemented.
 
-The service reads Hevy but does not write to it. A Hevy API key may itself have broader permissions, so it must remain outside the repository and logs. MCP tool results can contain personal workout data; the user should understand which connected agent or service receives it.
+Write tools produce previews by default and execute only when explicitly called with `dry_run=false`. Clients may require additional approval. Updates use complete payloads, and writes are not automatically retried because a timeout may leave their outcome unknown. For custom exercise creation, the client handles both the documented JSON response and the plain-text identifier observed from the live API. The demo provider supports previews without writes. The documented Hevy API does not currently provide delete operations for these resources. A Hevy API key may have broader permissions, so it must remain outside the repository and logs. MCP tool results can contain personal workout data; the user should understand which connected agent or service receives it.
 
 ## Future sources
 

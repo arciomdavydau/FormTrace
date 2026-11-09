@@ -76,6 +76,7 @@ async def test_progression_retains_weight_repetitions_and_missing_rpe() -> None:
         "rpe": None,
         "duration_seconds": None,
         "distance_meters": None,
+        "custom_metric": None,
     }
     assert len(result["sessions"][0]["working_sets"]) == 2  # excludes warmup
 
@@ -215,13 +216,26 @@ async def test_mcp_demo_report_and_tool_contract() -> None:
     server = create_server(TrainingService(DemoHevyClient(), provider="demo"))
     async with Client(server) as client:
         tools = await client.list_tools()
-        assert {tool.name for tool in tools} == {
+        assert {tool.name for tool in tools} >= {
             "get_training_report",
             "search_exercises",
             "get_exercise_progression",
             "get_workout_details",
         }
-        assert all(tool.annotations and tool.annotations.read_only_hint for tool in tools)
+        analytics = {
+            "get_training_report",
+            "search_exercises",
+            "get_exercise_progression",
+            "get_workout_details",
+        }
+        assert all(
+            t.annotations and t.annotations.read_only_hint for t in tools if t.name in analytics
+        )
+        assert all(
+            not t.annotations.read_only_hint
+            for t in tools
+            if t.name.startswith(("create_hevy_", "update_hevy_")) and t.annotations
+        )
         result = await client.call_tool(
             "get_training_report",
             {
