@@ -37,6 +37,8 @@ Hevy client or synthetic demo source
 
 The service uses Python, the `fastmcp` library, `httpx`, Pydantic and `uv`. Automated tests use pytest and HTTP mocks. It does not make an LLM API call; the connected agent handles conversation and explanation.
 
+The hub validates and publishes Pydantic-derived MCP output schemas for its analytical results and for the source, preview, and result envelopes around Hevy API calls. The `data` inside a Hevy response remains a provider-owned JSON object so additional upstream fields can pass through without being silently dropped. Contract tests validate actual MCP results against the schemas; existing top-level response shapes are preserved.
+
 The Hevy client fetches workout pages and exercise templates. The API limits the size of workout pages, so the current implementation loads all pages and filters by date locally. A failed page prevents a successful complete report. Since Hevy data can change while pages are being read, the result is not guaranteed to be an atomic snapshot.
 
 A process-local cache reduces repeated analytical reads; each result includes its provider and fetch time. It is invalidated after a write attempt, including an uncertain outcome. It is not persistent storage, and separate processes do not share it. SQLite or another persistence layer can be considered when there is a demonstrated need, with update and deletion handling designed explicitly.

@@ -15,6 +15,17 @@ This is a direction for an iterative personal project, not a schedule. Release n
 
 The implementation works locally. Connecting it privately to ChatGPT is a remaining step for the first release, not a current capability. Read and write operations have also been exercised against a real account with explicitly marked test data; automated tests use a mocked API and do not alter a real account.
 
+### Near-term backlog
+
+| Work | Useful result |
+| --- | --- |
+| Connect a private ChatGPT MCP client | The same read, preview, and explicitly requested write flows work from ChatGPT as well as a local client. |
+| Validate the optional Docker setup | The documented stdio container builds from the lockfile and starts in demo mode. |
+| Improve large-history synchronization | Reports can avoid repeated full-history downloads while handling Hevy workout updates, deletions, incomplete syncs, and recovery. |
+| Improve the weekly analysis | The user can inspect the evidence behind comparisons and identify gaps or ambiguous exercise classifications. |
+
+These are candidate work items, not a claim that any are already complete. Synchronization and storage need design and real-world validation before replacing the current in-memory cache.
+
 ## Second release: nutrition and body weight
 
 **Goal:** bring nutrition and weight into the same personal context as training.
@@ -23,6 +34,7 @@ The implementation works locally. Connecting it privately to ChatGPT is a remain
 - Add suitable integrations, import, or manual input according to what is actually available.
 - Show weight trends and nutrition summaries with clear coverage and provenance.
 - Explore questions that combine weight, nutrition, and training without presenting estimates as measured facts.
+- Define how missing food records and conflicting weight measurements affect the results shown to the user.
 
 The exact source, storage model, and scope of recommendations remain open.
 

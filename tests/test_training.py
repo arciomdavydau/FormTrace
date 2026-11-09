@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+import asyncio
 
 import httpx
 import pytest
@@ -88,6 +88,10 @@ async def test_invalid_dates_and_timezone_fail_explicitly() -> None:
         await service.report("2026-11-08", "2026-11-02", "UTC")
     with pytest.raises(ValueError, match="timezone"):
         await service.report("2026-11-02", "2026-11-08", "Not/AZone")
+    with pytest.raises(ValueError, match="YYYY-MM-DD"):
+        await service.report("20261102", "2026-11-08", "UTC")
+    with pytest.raises(ValueError, match="comparison period"):
+        await service.report("0001-01-01", "0001-01-01", "UTC")
 
 
 @pytest.mark.asyncio
@@ -139,6 +143,48 @@ async def test_hevy_second_page_failure_is_not_an_empty_or_complete_report() -> 
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_changed_pagination_is_rejected_instead_of_returning_incomplete_history() -> None:
+    def reply(request: httpx.Request) -> httpx.Response:
+        page = int(request.url.params["page"])
+        return httpx.Response(
+            200,
+            json={
+                "page": page,
+                "page_count": 2 if page == 1 else 3,
+                "workouts": [{"id": f"id-{page}", "start_time": "2026-11-04T18:00:00Z"}],
+            },
+        )
+
+    respx.get("https://api.hevyapp.com/v1/workouts").mock(side_effect=reply)
+    client = HevyClient(Settings(_env_file=None, hevy_api_key="fictional-key"))
+    try:
+        with pytest.raises(UpstreamAPIError, match="pagination changed"):
+            await client.get_all_workouts()
+    finally:
+        await client.close()
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_template_failure_does_not_return_a_complete_training_report(
+    sample_hevy_workouts_payload: dict[str, object],
+) -> None:
+    respx.get("https://api.hevyapp.com/v1/workouts").mock(
+        return_value=httpx.Response(200, json=sample_hevy_workouts_payload)
+    )
+    respx.get("https://api.hevyapp.com/v1/exercise_templates").mock(
+        return_value=httpx.Response(503)
+    )
+    client = HevyClient(Settings(_env_file=None, hevy_api_key="fictional-key", max_retries=1))
+    try:
+        with pytest.raises(UpstreamAPIError):
+            await TrainingService(client).report("2026-11-02", "2026-11-08", "UTC")
+    finally:
+        await client.close()
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_hevy_auth_failure_does_not_expose_response_body() -> None:
     respx.get("https://api.hevyapp.com/v1/workouts").mock(
         return_value=httpx.Response(401, text="example-secret-that-must-not-be-logged")
@@ -159,36 +205,9 @@ def test_unrecognized_hevy_set_type_remains_unknown() -> None:
 
 
 @pytest.mark.asyncio
-@respx.mock
 async def test_mcp_report_with_mocked_hevy_api(
-    mock_settings: Settings, sample_hevy_workouts_payload: dict[str, Any]
+    mock_settings: Settings, mocked_hevy_api: respx.MockRouter
 ) -> None:
-    respx.get("https://api.hevyapp.com/v1/workouts").mock(
-        return_value=httpx.Response(200, json=sample_hevy_workouts_payload)
-    )
-    respx.get("https://api.hevyapp.com/v1/exercise_templates").mock(
-        return_value=httpx.Response(
-            200,
-            json={
-                "page": 1,
-                "page_count": 1,
-                "exercise_templates": [
-                    {
-                        "id": "TPL_SQUAT",
-                        "title": "Barbell Back Squat",
-                        "primary_muscle_group": "quadriceps",
-                        "secondary_muscle_groups": ["glutes"],
-                    },
-                    {
-                        "id": "TPL_RDL",
-                        "title": "Romanian Deadlift",
-                        "primary_muscle_group": "hamstrings",
-                        "secondary_muscle_groups": ["glutes"],
-                    },
-                ],
-            },
-        )
-    )
     server = create_server(TrainingService(HevyClient(mock_settings)))
     async with Client(server) as client:
         result = await client.call_tool(
@@ -209,6 +228,7 @@ async def test_mcp_report_with_mocked_hevy_api(
         }
         assert current["muscle_groups"]["secondary_involvement_sets"] == {"glutes": 5}
         assert result.structured_content["source"]["provider"] == "hevy"
+    assert mocked_hevy_api.calls.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -265,3 +285,22 @@ async def test_cached_snapshot_refreshes_only_when_requested() -> None:
     assert source.calls == 1
     await service.report("2026-11-02", "2026-11-08", "UTC", refresh=True)
     assert source.calls == 2
+
+
+@pytest.mark.asyncio
+async def test_concurrent_reports_share_the_same_snapshot_fetch() -> None:
+    class CountingSource(DemoHevyClient):
+        calls = 0
+
+        async def get_all_workouts(self) -> list[WorkoutSession]:
+            self.calls += 1
+            await asyncio.sleep(0)
+            return await super().get_all_workouts()
+
+    source = CountingSource()
+    service = TrainingService(source, cache_seconds=300)
+    results = await asyncio.gather(
+        *[service.report("2026-11-02", "2026-11-08", "UTC") for _ in range(3)]
+    )
+    assert source.calls == 1
+    assert all(result["current"]["working_sets"] == 6 for result in results)

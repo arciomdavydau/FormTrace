@@ -1,10 +1,18 @@
-"""Synthetic Hevy payload and isolated configuration for tests."""
+"""Synthetic Hevy fixtures and isolated HTTP mocks shared by tests."""
 
+from __future__ import annotations
+
+import json
+from pathlib import Path
 from typing import Any
 
+import httpx
 import pytest
+import respx
 
 from fitness_hub.config import Settings
+
+_FIXTURES = Path(__file__).parent / "fixtures" / "hevy"
 
 
 @pytest.fixture
@@ -21,84 +29,24 @@ def mock_settings() -> Settings:
 
 @pytest.fixture
 def sample_hevy_workouts_payload() -> dict[str, Any]:
-    """Realistic JSON payload from Hevy API GET /workouts."""
-    return {
-        "page": 1,
-        "page_count": 1,
-        "workouts": [
-            {
-                "id": "workout-uuid-001",
-                "title": "Leg Day Hypertrophy",
-                "description": "Squat focus and posterior chain",
-                "start_time": "2026-11-08T18:00:00Z",
-                "end_time": "2026-11-08T19:15:00Z",
-                "exercises": [
-                    {
-                        "id": "ex-squat-1",
-                        "title": "Barbell Back Squat",
-                        "exercise_template_id": "TPL_SQUAT",
-                        "notes": "Good depth, controlled tempo",
-                        "sets": [
-                            {
-                                "index": 0,
-                                "type": "warmup",
-                                "weight_kg": 60.0,
-                                "reps": 10,
-                                "rpe": None,
-                            },
-                            {
-                                "index": 1,
-                                "type": "warmup",
-                                "weight_kg": 100.0,
-                                "reps": 5,
-                                "rpe": None,
-                            },
-                            {
-                                "index": 2,
-                                "type": "normal",
-                                "weight_kg": 140.0,
-                                "reps": 8,
-                                "rpe": 8.0,
-                            },
-                            {
-                                "index": 3,
-                                "type": "normal",
-                                "weight_kg": 140.0,
-                                "reps": 8,
-                                "rpe": 8.5,
-                            },
-                            {
-                                "index": 4,
-                                "type": "failure",
-                                "weight_kg": 140.0,
-                                "reps": 7,
-                                "rpe": 10.0,
-                            },
-                        ],
-                    },
-                    {
-                        "id": "ex-rdl-2",
-                        "title": "Romanian Deadlift",
-                        "exercise_template_id": "TPL_RDL",
-                        "notes": None,
-                        "sets": [
-                            {
-                                "index": 0,
-                                "type": "normal",
-                                "weight_kg": 110.0,
-                                "reps": 10,
-                                "rpe": 8.0,
-                            },
-                            {
-                                "index": 1,
-                                "type": "dropset",
-                                "weight_kg": 90.0,
-                                "reps": 12,
-                                "rpe": 9.5,
-                            },
-                        ],
-                    },
-                ],
-            }
-        ],
-    }
+    return json.loads((_FIXTURES / "workouts_page.json").read_text())
+
+
+@pytest.fixture
+def sample_hevy_exercise_templates_payload() -> dict[str, Any]:
+    return json.loads((_FIXTURES / "exercise_templates_page.json").read_text())
+
+
+@pytest.fixture
+def mocked_hevy_api(
+    respx_mock: respx.MockRouter,
+    sample_hevy_workouts_payload: dict[str, Any],
+    sample_hevy_exercise_templates_payload: dict[str, Any],
+) -> respx.MockRouter:
+    respx_mock.get("https://api.hevyapp.com/v1/workouts").mock(
+        return_value=httpx.Response(200, json=sample_hevy_workouts_payload)
+    )
+    respx_mock.get("https://api.hevyapp.com/v1/exercise_templates").mock(
+        return_value=httpx.Response(200, json=sample_hevy_exercise_templates_payload)
+    )
+    return respx_mock

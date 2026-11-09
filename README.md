@@ -4,6 +4,10 @@ A personal fitness MCP server. The first version provides Hevy training and rout
 
 This is an evolving personal project, not a medical or coaching system. Results are limited by what was actually recorded.
 
+## Why
+
+Workout logs are useful, but answering questions across multiple sessions can require a lot of manual comparison. Fitness MCP Hub brings the Hevy training API and repeatable calculations into one MCP server, so a person can ask an assistant for a weekly overview or an exercise's history while retaining visibility into the underlying records.
+
 ## What it does
 
 - Summarizes a period of workouts alongside the previous equal-length period.
@@ -30,6 +34,22 @@ FITNESS_DEMO_MODE=true uv run fitness-mcp-hub
 ```
 
 The command starts an MCP server over stdio; it waits for an MCP client rather than opening a human-readable console. The demo workouts are dated 2026-11-04 and 2026-11-07. Ask your MCP client for a training report from `2026-11-02` to `2026-11-08`, or search for `Demo bench`.
+
+For example, ask: **“Summarize my training from November 2 to November 8, 2026.”** An excerpt of the fictional result is:
+
+```json
+{
+  "current": {
+    "workouts_count": 2,
+    "working_sets": 6,
+    "warmup_sets": 1,
+    "muscle_groups": {"primary_working_sets": {"chest": 4, "quadriceps": 2}}
+  },
+  "previous": {"workouts_count": 0}
+}
+```
+
+The complete result also includes the periods, source, secondary involvement, coverage, and warnings. To inspect exercise history, ask the agent to search for `Demo bench` and then request its progression for the same period.
 
 An example MCP client configuration (replace the directory with your checkout path):
 
@@ -96,7 +116,7 @@ uv run ruff format --check .
 uv run mypy src
 ```
 
-Tests use mock or demo data; they do not need a Hevy key or write to a real account. Before sharing a development transcript, check it for secrets and health data. The optional Docker setup is for stdio only and has not yet been validated for this version.
+Tests use fictional JSON fixtures, HTTP mocks, and an isolated stdio demo; they do not need a Hevy key or write to a real account. They verify MCP output schemas, pagination, retry behavior, and the analytical calculations. A GitHub Actions workflow is included for Python 3.11 and 3.12; it runs after the repository is published. Before sharing a development transcript, check it for secrets and health data. The optional Docker setup is for stdio only and has not yet been validated for this version.
 
 ## Project documentation
 

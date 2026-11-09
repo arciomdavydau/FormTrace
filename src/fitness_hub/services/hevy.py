@@ -9,6 +9,12 @@ from typing import Any
 from pydantic import BaseModel
 
 from fitness_hub.models.hevy_inputs import RoutineCreateInput, WorkoutCreateInput
+from fitness_hub.models.responses import (
+    DirectSource,
+    HevyReadResult,
+    HevyWritePreview,
+    HevyWriteResult,
+)
 from fitness_hub.services.training import TrainingService
 
 
@@ -40,11 +46,15 @@ class HevyOperations:
         self.training = training
 
     def _source_info(self) -> dict[str, str]:
-        return {"provider": self.training.provider, "fetched_at": datetime.now(UTC).isoformat()}
+        return DirectSource(
+            provider=self.training.provider, fetched_at=datetime.now(UTC).isoformat()
+        ).model_dump()
 
     async def read(self, path: str, *, params: dict[str, Any] | None = None) -> dict[str, Any]:
         result = await self.training.source.api_request("GET", path, params=params)
-        return {"source": self._source_info(), "data": result}
+        return HevyReadResult.model_validate(
+            {"source": self._source_info(), "data": result}
+        ).model_dump(mode="json")
 
     async def write(
         self, method: str, path: str, wrapper: str, payload: BaseModel, *, dry_run: bool
@@ -63,17 +73,21 @@ class HevyOperations:
                 for recorded_set in exercise.get("sets", []):
                     recorded_set.setdefault("type", "normal")
         if dry_run:
-            return {
-                "dry_run": True,
-                "provider": self.training.provider,
-                "operation": method,
-                "resource": path,
-                "payload": body,
-                "message": "Preview only; no data was written to Hevy.",
-            }
+            return HevyWritePreview.model_validate(
+                {
+                    "dry_run": True,
+                    "provider": self.training.provider,
+                    "operation": method,
+                    "resource": path,
+                    "payload": body,
+                    "message": "Preview only; no data was written to Hevy.",
+                }
+            ).model_dump(mode="json")
         try:
             result = await self.training.source.api_request(method, path, body=body)
         finally:
             # A timed-out write may have been applied. Never keep the old snapshot.
             await self.training.invalidate()
-        return {"dry_run": False, "source": self._source_info(), "data": result}
+        return HevyWriteResult.model_validate(
+            {"dry_run": False, "source": self._source_info(), "data": result}
+        ).model_dump(mode="json")

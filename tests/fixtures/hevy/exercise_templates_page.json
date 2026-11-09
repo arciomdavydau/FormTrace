@@ -1,0 +1,22 @@
+{
+  "page": 1,
+  "page_count": 1,
+  "exercise_templates": [
+    {
+      "id": "TPL_SQUAT",
+      "title": "Barbell Back Squat",
+      "primary_muscle_group": "quadriceps",
+      "secondary_muscle_groups": [
+        "glutes"
+      ]
+    },
+    {
+      "id": "TPL_RDL",
+      "title": "Romanian Deadlift",
+      "primary_muscle_group": "hamstrings",
+      "secondary_muscle_groups": [
+        "glutes"
+      ]
+    }
+  ]
+}

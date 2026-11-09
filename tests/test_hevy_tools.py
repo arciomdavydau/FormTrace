@@ -11,7 +11,7 @@ import respx
 from fastmcp import Client
 from pydantic import ValidationError
 
-from fitness_hub.clients.base import UpstreamAPIError
+from fitness_hub.clients.base import RateLimitError, UpstreamAPIError
 from fitness_hub.clients.hevy import HevyClient
 from fitness_hub.config import Settings
 from fitness_hub.demo import DemoHevyClient
@@ -23,6 +23,7 @@ from fitness_hub.models.hevy_inputs import (
 from fitness_hub.server import create_server
 from fitness_hub.services.hevy import HevyOperations
 from fitness_hub.services.training import TrainingService
+from tests.helpers import assert_output_matches_schema
 
 
 def make_settings() -> Settings:
@@ -75,6 +76,7 @@ async def test_read_tools_call_the_documented_hevy_endpoints(
             assert result.structured_content and result.structured_content["data"] == {
                 "fictional": True
             }
+            await assert_output_matches_schema(client, tool, result.structured_content)
         assert route.call_count == 1
         request = route.calls[0].request
         assert dict(request.url.params) == expected_query
@@ -147,9 +149,11 @@ async def test_write_tools_preview_then_send_expected_payload(
         async with Client(server) as client:
             preview = await client.call_tool(tool, args)
             assert preview.structured_content and preview.structured_content["dry_run"] is True
+            await assert_output_matches_schema(client, tool, preview.structured_content)
             assert route.call_count == 0
             result = await client.call_tool(tool, {**args, "dry_run": False})
             assert result.structured_content and result.structured_content["dry_run"] is False
+            await assert_output_matches_schema(client, tool, result.structured_content)
         assert route.call_count == 1
         body = json.loads(route.calls[0].request.content)
         assert wrapper in body
@@ -233,6 +237,36 @@ async def test_transient_read_can_be_retried() -> None:
         result = await source.api_request("GET", "workouts/count")
         assert result == {"workout_count": 2}
         assert route.call_count == 2
+    finally:
+        await source.close()
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_rate_limited_read_retries_without_repeating_writes() -> None:
+    read = respx.get("https://api.hevyapp.com/v1/workouts/count").mock(
+        side_effect=[
+            httpx.Response(429, headers={"Retry-After": "0"}),
+            httpx.Response(200, json={"workout_count": 2}),
+        ]
+    )
+    write = respx.post("https://api.hevyapp.com/v1/workouts").mock(
+        return_value=httpx.Response(429, headers={"Retry-After": "0"})
+    )
+    source = HevyClient(make_settings())
+    source.backoff_factor = 0
+    try:
+        assert (await source.api_request("GET", "workouts/count"))["workout_count"] == 2
+        with pytest.raises(RateLimitError):
+            await HevyOperations(TrainingService(source)).write(
+                "POST",
+                "workouts",
+                "workout",
+                WorkoutCreateInput.model_validate(WORKOUT),
+                dry_run=False,
+            )
+        assert read.call_count == 2
+        assert write.call_count == 1
     finally:
         await source.close()
 

@@ -14,6 +14,12 @@ from fitness_hub.clients.hevy import HevyClient
 from fitness_hub.config import get_settings
 from fitness_hub.demo import DemoHevyClient
 from fitness_hub.hevy_tools import register_hevy_tools
+from fitness_hub.models.responses import (
+    ExerciseProgressionReport,
+    ExerciseSearchResult,
+    TrainingReport,
+    WorkoutDetails,
+)
 from fitness_hub.services.training import TrainingService
 
 
@@ -48,7 +54,7 @@ def create_server(service: TrainingService | None = None) -> FastMCP:
     )
     read_only = {"readOnlyHint": True, "destructiveHint": False, "openWorldHint": True}
 
-    @server.tool(annotations=read_only)
+    @server.tool(annotations=read_only, output_schema=TrainingReport.model_json_schema())
     async def get_training_report(
         start_date: str,
         end_date: str,
@@ -62,12 +68,12 @@ def create_server(service: TrainingService | None = None) -> FastMCP:
         """
         return await training.report(start_date, end_date, timezone, refresh)
 
-    @server.tool(annotations=read_only)
+    @server.tool(annotations=read_only, output_schema=ExerciseSearchResult.model_json_schema())
     async def search_exercises(query: str) -> dict[str, Any]:
         """Find available exercise templates by name and return their IDs."""
         return await training.search(query)
 
-    @server.tool(annotations=read_only)
+    @server.tool(annotations=read_only, output_schema=ExerciseProgressionReport.model_json_schema())
     async def get_exercise_progression(
         exercise_id: str,
         start_date: str,
@@ -77,7 +83,7 @@ def create_server(service: TrainingService | None = None) -> FastMCP:
         """Get recorded working sets for one exercise over inclusive YYYY-MM-DD dates."""
         return await training.progression(exercise_id, start_date, end_date, timezone)
 
-    @server.tool(annotations=read_only)
+    @server.tool(annotations=read_only, output_schema=WorkoutDetails.model_json_schema())
     async def get_workout_details(workout_id: str) -> dict[str, Any]:
         """Get a workout's exercises and recorded sets to inspect an analytic result."""
         return await training.workout_details(workout_id)
