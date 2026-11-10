@@ -12,7 +12,6 @@ from fastmcp import FastMCP
 
 from fitness_hub.clients.hevy import HevyClient
 from fitness_hub.config import get_settings
-from fitness_hub.demo import DemoHevyClient
 from fitness_hub.hevy_tools import register_hevy_tools
 from fitness_hub.models.responses import (
     ExerciseProgressionReport,
@@ -27,10 +26,8 @@ def create_server(service: TrainingService | None = None) -> FastMCP:
     """Build an MCP server; an injected service permits isolated integration tests."""
     settings = get_settings()
     if service is None:
-        source = DemoHevyClient() if settings.fitness_demo_mode else HevyClient(settings)
         service = TrainingService(
-            source,
-            provider="demo" if settings.fitness_demo_mode else "hevy",
+            HevyClient(settings),
             cache_seconds=settings.fitness_cache_seconds,
         )
     training = service

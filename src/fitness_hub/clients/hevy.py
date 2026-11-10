@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
+
+import httpx
 
 from fitness_hub.clients.base import BaseAsyncClient, UpstreamAPIError
 from fitness_hub.config import Settings, get_settings
@@ -15,6 +18,9 @@ from fitness_hub.models.workouts import (
 )
 
 logger = logging.getLogger(__name__)
+_EXERCISE_ID = re.compile(
+    r"(?:[0-9]+|[0-9a-fA-F]{8}|[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"
+)
 
 
 class HevyClient(BaseAsyncClient):
@@ -38,6 +44,22 @@ class HevyClient(BaseAsyncClient):
         elif not clean.startswith("v1/"):
             clean = f"v1/{clean}"
         return f"/{clean}"
+
+    def _decode_response(
+        self, response: httpx.Response, *, method: str, url: str
+    ) -> dict[str, Any] | list[Any]:
+        # Hevy can return a bare identifier for exercise creation, despite documenting JSON.
+        exercise_path = httpx.URL(f"{self.base_url}{self._endpoint('exercise_templates')}").path
+        if method.upper() == "POST" and httpx.URL(url).path.rstrip("/") == exercise_path:
+            try:
+                decoded = response.json()
+            except ValueError:
+                decoded = response.text.strip()
+            if isinstance(decoded, (str, int)) and not isinstance(decoded, bool):
+                identifier = str(decoded)
+                if _EXERCISE_ID.fullmatch(identifier):
+                    return {"id": identifier}
+        return super()._decode_response(response, method=method, url=url)
 
     @property
     def headers(self) -> dict[str, str]:
@@ -74,12 +96,14 @@ class HevyClient(BaseAsyncClient):
             headers=self.headers,
             params=params,
             json=body,
-            accept_plain_identifier=(
-                method.upper() == "POST" and path.strip("/") == "exercise_templates"
-            ),
         )
         if not isinstance(result, dict):
-            raise UpstreamAPIError("Unexpected Hevy API response format")
+            outcome = (
+                " The write may have succeeded; verify before retrying."
+                if method.upper() not in {"GET", "HEAD"}
+                else ""
+            )
+            raise UpstreamAPIError(f"Unexpected Hevy API response format.{outcome}")
         return result
 
     def _parse_workout(self, item: dict[str, Any]) -> WorkoutSession:

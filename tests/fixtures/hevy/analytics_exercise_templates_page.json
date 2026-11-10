@@ -1,0 +1,20 @@
+{
+  "page": 1,
+  "page_count": 1,
+  "exercise_templates": [
+    {
+      "id": "fixture-bench",
+      "title": "Bench press",
+      "type": "weight_reps",
+      "primary_muscle_group": "chest",
+      "secondary_muscle_groups": ["triceps", "shoulders"]
+    },
+    {
+      "id": "fixture-squat",
+      "title": "Squat",
+      "type": "weight_reps",
+      "primary_muscle_group": "quadriceps",
+      "secondary_muscle_groups": ["glutes"]
+    }
+  ]
+}

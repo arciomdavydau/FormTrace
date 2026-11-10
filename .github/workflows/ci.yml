@@ -16,7 +16,6 @@ jobs:
       matrix:
         python: ["3.11", "3.12"]
     env:
-      FITNESS_DEMO_MODE: "true"
       HEVY_API_KEY: fictional-ci-key
     steps:
       - name: Check out source

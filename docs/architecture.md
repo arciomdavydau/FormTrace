@@ -5,18 +5,18 @@ This document describes the intended structure of the product and distinguishes 
 ## System view
 
 ```text
- Data sources                       Interfaces
+ Data sources                              Interfaces
 
- Hevy ────────────────┐       ┌─── MCP-compatible AI agent
- Nutrition (planned) ─┤       │
- Body weight (planned)├── Fitness Hub ─── Future user interface
- Apple Health (later) ┤       │
- Manual input (later) ┘       └─── Other clients as needed
+ Hevy ─────────────────────────────┐       ┌─── MCP-compatible AI agent
+ Nutrition (planned) ──────────────┤       │
+ Body weight (planned) ────────────┼── Fitness Hub ─── Future user interface
+ Apple Health (planned via iOS) ───┤       │
+ Manual input (later) ─────────────┘       └─── Other clients as needed
 ```
 
 Inside Fitness Hub, source adapters obtain data, application services organize use cases, and domain calculations produce reproducible results. Interfaces expose those results. The analytical core should remain usable without a specific AI model or client.
 
-A future user interface can call the same application services as the MCP interface. The choice of UI platform and its API is open. Likewise, the specific storage implementation is not fixed across the lifetime of the product.
+A future user interface can call the same application services as the MCP interface. A planned iOS app will also collect authorized Apple Health data; whether it becomes the main user interface is undecided. The specific storage implementation is not fixed across the lifetime of the product.
 
 ## Current implementation: training
 
@@ -32,7 +32,7 @@ MCP tools (FastMCP)
 Application services ──► Hevy operations and workout analytics
     │
     ▼
-Hevy client or synthetic demo source
+Hevy client ──► Hevy API
 ```
 
 The service uses Python, the `fastmcp` library, `httpx`, Pydantic and `uv`. Automated tests use pytest and HTTP mocks. It does not make an LLM API call; the connected agent handles conversation and explanation.
@@ -55,8 +55,25 @@ A process-local cache reduces repeated analytical reads; each result includes it
 
 The current MCP server exposes analytical tools and the documented training-related Hevy operations: reading workouts, routines, exercise templates, folders, and history; creating workouts, routines, templates, and folders; and updating workouts and routines. It runs locally over stdio. ChatGPT connectivity through a protected connection is a desired final step for the first release, but has not yet been configured. A user interface and multi-user isolation are not implemented.
 
-Write tools produce previews by default and execute only when explicitly called with `dry_run=false`. Clients may require additional approval. Updates use complete payloads, and writes are not automatically retried because a timeout may leave their outcome unknown. For custom exercise creation, the client handles both the documented JSON response and the plain-text identifier observed from the live API. The demo provider supports previews without writes. The documented Hevy API does not currently provide delete operations for these resources. A Hevy API key may have broader permissions, so it must remain outside the repository and logs. MCP tool results can contain personal workout data; the user should understand which connected agent or service receives it.
+Write tools produce previews by default and execute only when explicitly called with `dry_run=false`. Clients may require additional approval. Updates use complete payloads, and writes are not automatically retried because a timeout may leave their outcome unknown. For custom exercise creation, the Hevy client handles both the documented JSON response and the plain-text identifier observed from the live API. The documented Hevy API does not currently provide delete operations for these resources. A Hevy API key may have broader permissions, so it must remain outside the repository and logs. MCP tool results can contain personal workout data; the user should understand which connected agent or service receives it.
 
-## Future sources
+## Planned Apple Health integration
 
-Nutrition and body weight belong to the planned second release. Their actual sources and import methods remain to be verified. Open Wearables is a possible gateway to Apple Health later; a more lightweight replacement may be considered if there is a reason to build one. Overlapping samples from different devices require a source-specific merging strategy before totals can be trusted.
+```text
+iPhone / Apple Watch data
+    │
+    ▼
+Apple Health / HealthKit
+    │ permission for selected data
+    ▼
+Planned iOS app
+    │ secure synchronization
+    ▼
+Gateway or ingestion service ──► Fitness Hub source adapter
+```
+
+The iOS app is planned, not implemented. It will request access to selected HealthKit data and synchronize it to the hub through an ingestion path. Open Wearables is a possible initial gateway; a smaller dedicated ingestion service remains an option. The choice of iOS framework, transport, hosting, and storage is open.
+
+The integration needs explicit permission and sync controls, a visible last-sync status, and clear handling of failed or delayed synchronization. The design should account for updates and deletions, repeated uploads, and iOS background-execution limits. Preserve source and timestamp information: overlapping samples from different devices require a source-specific merging strategy before totals can be trusted.
+
+Nutrition and body weight belong to the planned second release. Their actual sources and import methods remain to be verified; Apple Health may be one source for body weight if useful.

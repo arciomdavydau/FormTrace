@@ -1,0 +1,47 @@
+{
+  "page": 1,
+  "page_count": 1,
+  "workouts": [
+    {
+      "id": "fixture-workout-1",
+      "title": "Full body A",
+      "start_time": "2026-11-04T18:00:00Z",
+      "end_time": "2026-11-04T19:00:00Z",
+      "exercises": [
+        {
+          "title": "Bench press",
+          "exercise_template_id": "fixture-bench",
+          "sets": [
+            {"type": "warmup", "weight_kg": 30, "reps": 10},
+            {"type": "normal", "weight_kg": 50, "reps": 8},
+            {"type": "normal", "weight_kg": 50, "reps": 7}
+          ]
+        },
+        {
+          "title": "Squat",
+          "exercise_template_id": "fixture-squat",
+          "sets": [
+            {"type": "normal", "weight_kg": 60, "reps": 8},
+            {"type": "normal", "weight_kg": 60, "reps": 8}
+          ]
+        }
+      ]
+    },
+    {
+      "id": "fixture-workout-2",
+      "title": "Full body B",
+      "start_time": "2026-11-07T18:00:00Z",
+      "end_time": "2026-11-07T19:00:00Z",
+      "exercises": [
+        {
+          "title": "Bench press",
+          "exercise_template_id": "fixture-bench",
+          "sets": [
+            {"type": "normal", "weight_kg": 50, "reps": 9},
+            {"type": "failure", "weight_kg": 50, "reps": 8}
+          ]
+        }
+      ]
+    }
+  ]
+}

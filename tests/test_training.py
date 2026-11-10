@@ -12,18 +12,18 @@ from fastmcp import Client
 from fitness_hub.clients.base import UpstreamAPIError
 from fitness_hub.clients.hevy import HevyClient
 from fitness_hub.config import Settings
-from fitness_hub.demo import DemoHevyClient
 from fitness_hub.models.workouts import ExerciseLog, ExerciseSet, SetType, WorkoutSession
 from fitness_hub.server import create_server
 from fitness_hub.services.training import TrainingService
+from tests.fakes import FakeTrainingSource
 
 
 @pytest.mark.asyncio
 async def test_report_counts_primary_and_secondary_without_merging_them() -> None:
-    service = TrainingService(DemoHevyClient(), provider="demo")
+    service = TrainingService(FakeTrainingSource(), provider="fixture")
     report = await service.report("2026-11-02", "2026-11-08", "Europe/Warsaw")
     current = report["current"]
-    assert report["source"]["provider"] == "demo"
+    assert report["source"]["provider"] == "fixture"
     assert report["previous_period"] == {"start": "2026-10-26", "end": "2026-11-01"}
     assert current["workouts_count"] == 2
     assert current["working_sets"] == 6
@@ -35,7 +35,7 @@ async def test_report_counts_primary_and_secondary_without_merging_them() -> Non
 
 @pytest.mark.asyncio
 async def test_unknown_set_types_and_templates_are_not_counted_as_known_work() -> None:
-    class Source(DemoHevyClient):
+    class Source(FakeTrainingSource):
         async def get_all_workouts(self) -> list[WorkoutSession]:
             return [
                 WorkoutSession(
@@ -66,8 +66,8 @@ async def test_unknown_set_types_and_templates_are_not_counted_as_known_work() -
 
 @pytest.mark.asyncio
 async def test_progression_retains_weight_repetitions_and_missing_rpe() -> None:
-    service = TrainingService(DemoHevyClient(), provider="demo")
-    result = await service.progression("demo-bench", "2026-11-02", "2026-11-08", "UTC")
+    service = TrainingService(FakeTrainingSource(), provider="fixture")
+    result = await service.progression("fixture-bench", "2026-11-02", "2026-11-08", "UTC")
     assert len(result["sessions"]) == 2
     assert result["sessions"][0]["working_sets"][0] == {
         "type": "normal",
@@ -83,7 +83,7 @@ async def test_progression_retains_weight_repetitions_and_missing_rpe() -> None:
 
 @pytest.mark.asyncio
 async def test_invalid_dates_and_timezone_fail_explicitly() -> None:
-    service = TrainingService(DemoHevyClient(), provider="demo")
+    service = TrainingService(FakeTrainingSource(), provider="fixture")
     with pytest.raises(ValueError, match="on or after"):
         await service.report("2026-11-08", "2026-11-02", "UTC")
     with pytest.raises(ValueError, match="timezone"):
@@ -232,8 +232,8 @@ async def test_mcp_report_with_mocked_hevy_api(
 
 
 @pytest.mark.asyncio
-async def test_mcp_demo_report_and_tool_contract() -> None:
-    server = create_server(TrainingService(DemoHevyClient(), provider="demo"))
+async def test_mcp_report_and_tool_contract() -> None:
+    server = create_server(TrainingService(FakeTrainingSource(), provider="fixture"))
     async with Client(server) as client:
         tools = await client.list_tools()
         assert {tool.name for tool in tools} >= {
@@ -266,12 +266,12 @@ async def test_mcp_demo_report_and_tool_contract() -> None:
         )
         assert result.structured_content is not None
         assert result.structured_content["current"]["working_sets"] == 6
-        assert result.structured_content["source"]["provider"] == "demo"
+        assert result.structured_content["source"]["provider"] == "fixture"
 
 
 @pytest.mark.asyncio
 async def test_cached_snapshot_refreshes_only_when_requested() -> None:
-    class CountingSource(DemoHevyClient):
+    class CountingSource(FakeTrainingSource):
         calls = 0
 
         async def get_all_workouts(self) -> list[WorkoutSession]:
@@ -289,7 +289,7 @@ async def test_cached_snapshot_refreshes_only_when_requested() -> None:
 
 @pytest.mark.asyncio
 async def test_concurrent_reports_share_the_same_snapshot_fetch() -> None:
-    class CountingSource(DemoHevyClient):
+    class CountingSource(FakeTrainingSource):
         calls = 0
 
         async def get_all_workouts(self) -> list[WorkoutSession]:

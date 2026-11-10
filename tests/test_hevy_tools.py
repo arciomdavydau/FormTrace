@@ -11,10 +11,9 @@ import respx
 from fastmcp import Client
 from pydantic import ValidationError
 
-from fitness_hub.clients.base import RateLimitError, UpstreamAPIError
+from fitness_hub.clients.base import BaseAsyncClient, RateLimitError, UpstreamAPIError
 from fitness_hub.clients.hevy import HevyClient
 from fitness_hub.config import Settings
-from fitness_hub.demo import DemoHevyClient
 from fitness_hub.models.hevy_inputs import (
     RoutineUpdateInput,
     WorkoutCreateInput,
@@ -23,6 +22,7 @@ from fitness_hub.models.hevy_inputs import (
 from fitness_hub.server import create_server
 from fitness_hub.services.hevy import HevyOperations
 from fitness_hub.services.training import TrainingService
+from tests.fakes import FakeTrainingSource
 from tests.helpers import assert_output_matches_schema
 
 
@@ -122,7 +122,7 @@ ROUTINE = {
             "exercise",
             {
                 "exercise": {
-                    "title": "Demo exercise",
+                    "title": "Fixture exercise",
                     "exercise_type": "weight_reps",
                     "equipment_category": "barbell",
                     "muscle_group": "chest",
@@ -134,7 +134,7 @@ ROUTINE = {
             "POST",
             "routine_folders",
             "routine_folder",
-            {"folder": {"title": "Demo folder"}},
+            {"folder": {"title": "Fixture folder"}},
         ),
     ],
 )
@@ -323,6 +323,22 @@ async def test_create_exercise_accepts_hevys_plain_text_identifier() -> None:
 
 @pytest.mark.asyncio
 @respx.mock
+async def test_exercise_identifier_with_unversioned_base_and_trailing_slash() -> None:
+    route = respx.post("https://api.hevyapp.com/v1/exercise_templates/").mock(
+        return_value=httpx.Response(200, text="01234567-89ab-4cde-8fab-0123456789ab")
+    )
+    settings = Settings(_env_file=None, hevy_api_base_url="https://api.hevyapp.com")
+    source = HevyClient(settings)
+    try:
+        response = await source.api_request("POST", "exercise_templates/", body={})
+        assert response["id"] == "01234567-89ab-4cde-8fab-0123456789ab"
+        assert route.call_count == 1
+    finally:
+        await source.close()
+
+
+@pytest.mark.asyncio
+@respx.mock
 async def test_unexpected_plain_text_is_not_reported_as_an_exercise_id() -> None:
     route = respx.post("https://api.hevyapp.com/v1/exercise_templates").mock(
         return_value=httpx.Response(200, text="FAILED")
@@ -331,6 +347,80 @@ async def test_unexpected_plain_text_is_not_reported_as_an_exercise_id() -> None
     try:
         with pytest.raises(UpstreamAPIError, match="may have succeeded"):
             await source.api_request("POST", "exercise_templates", body={"exercise": {}})
+        assert route.call_count == 1
+    finally:
+        await source.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response_json", "expected_id"),
+    [
+        ("01234567-89ab-4cde-8fab-0123456789ab", "01234567-89ab-4cde-8fab-0123456789ab"),
+        (12345, "12345"),
+        ({"id": "from-json"}, "from-json"),
+    ],
+)
+@respx.mock
+async def test_hevy_exercise_creation_accepts_json_responses(
+    response_json: Any, expected_id: str
+) -> None:
+    route = respx.post("https://api.hevyapp.com/v1/exercise_templates").mock(
+        return_value=httpx.Response(200, json=response_json)
+    )
+    source = HevyClient(make_settings())
+    try:
+        response = await source.api_request("POST", "/v1/exercise_templates", body={})
+        assert response["id"] == expected_id
+        assert route.call_count == 1
+    finally:
+        await source.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("response_json", [True, "FAILED"])
+@respx.mock
+async def test_hevy_exercise_creation_rejects_invalid_json_scalars(response_json: Any) -> None:
+    route = respx.post("https://api.hevyapp.com/v1/exercise_templates").mock(
+        return_value=httpx.Response(200, json=response_json)
+    )
+    source = HevyClient(make_settings())
+    try:
+        with pytest.raises(UpstreamAPIError, match="may have succeeded"):
+            await source.api_request("POST", "exercise_templates", body={})
+        assert route.call_count == 1
+    finally:
+        await source.close()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(("method", "path"), [("GET", "exercise_templates"), ("POST", "workouts")])
+@respx.mock
+async def test_plain_identifier_is_only_supported_for_exercise_creation(
+    method: str, path: str
+) -> None:
+    route = respx.route(method=method, url=f"https://api.hevyapp.com/v1/{path}").mock(
+        return_value=httpx.Response(200, text="01234567-89ab-4cde-8fab-0123456789ab")
+    )
+    source = HevyClient(make_settings())
+    try:
+        with pytest.raises(UpstreamAPIError, match="Invalid JSON"):
+            await source.api_request(method, path)
+        assert route.call_count == 1
+    finally:
+        await source.close()
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_base_client_does_not_interpret_plain_identifiers() -> None:
+    route = respx.post("https://example.test/exercise_templates").mock(
+        return_value=httpx.Response(200, text="01234567-89ab-4cde-8fab-0123456789ab")
+    )
+    source = BaseAsyncClient("https://example.test")
+    try:
+        with pytest.raises(UpstreamAPIError, match="may have succeeded"):
+            await source.request("POST", "/exercise_templates")
         assert route.call_count == 1
     finally:
         await source.close()
@@ -367,7 +457,7 @@ async def test_invalid_read_arguments_fail_without_contacting_hevy(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("write_fails", [False, True])
 async def test_cached_analytics_are_invalidated_after_write_attempt(write_fails: bool) -> None:
-    class Source(DemoHevyClient):
+    class Source(FakeTrainingSource):
         calls = 0
 
         async def get_all_workouts(self) -> list[Any]:
@@ -399,7 +489,7 @@ async def test_cached_analytics_are_invalidated_after_write_attempt(write_fails:
 
 @pytest.mark.asyncio
 async def test_read_and_write_annotations_match_the_tool_effects() -> None:
-    server = create_server(TrainingService(DemoHevyClient(), provider="demo"))
+    server = create_server(TrainingService(FakeTrainingSource(), provider="fixture"))
     async with Client(server) as client:
         tools = {tool.name: tool for tool in await client.list_tools()}
         assert len(tools) == 22
@@ -409,14 +499,26 @@ async def test_read_and_write_annotations_match_the_tool_effects() -> None:
 
 
 @pytest.mark.asyncio
-async def test_demo_mode_supports_reading_and_previews_but_never_live_writes() -> None:
-    server = create_server(TrainingService(DemoHevyClient(), provider="demo"))
+@respx.mock
+async def test_reads_and_write_preview_use_hevy_with_mocked_http() -> None:
+    read = respx.get("https://api.hevyapp.com/v1/workouts").mock(
+        return_value=httpx.Response(200, json={"workouts": [{"id": "fixture-workout-1"}]})
+    )
+    write = respx.post("https://api.hevyapp.com/v1/workouts").mock(
+        return_value=httpx.Response(200, json={"id": "fixture-workout-2"})
+    )
+    server = create_server(TrainingService(HevyClient(make_settings())))
     async with Client(server) as client:
         result = await client.call_tool("list_hevy_workouts", {})
-        assert result.structured_content and len(result.structured_content["data"]["workouts"]) == 2
+        assert result.structured_content and len(result.structured_content["data"]["workouts"]) == 1
         preview = await client.call_tool("create_hevy_workout", {"workout": WORKOUT})
         assert preview.structured_content and preview.structured_content["dry_run"] is True
-        failure = await client.call_tool(
-            "create_hevy_workout", {"workout": WORKOUT, "dry_run": False}, raise_on_error=False
+        assert write.call_count == 0
+        created = await client.call_tool(
+            "create_hevy_workout", {"workout": WORKOUT, "dry_run": False}
         )
-        assert failure.is_error
+        assert created.structured_content and created.structured_content["data"]["id"] == (
+            "fixture-workout-2"
+        )
+    assert read.call_count == 1
+    assert write.call_count == 1

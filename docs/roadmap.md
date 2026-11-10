@@ -10,7 +10,7 @@ This is a direction for an iterative personal project, not a schedule. Release n
 - Support the Hevy API's documented create/update operations for workouts and routines, plus creating custom exercises and routine folders.
 - Summarize training and recorded working sets by muscle group for a period.
 - Inspect a workout and compare the recorded history of an exercise.
-- Provide a synthetic demo, tests, and instructions to run locally.
+- Provide isolated tests and instructions to run locally.
 - Continue validating results against actual usage and improve reliability where needed.
 
 The implementation works locally. Connecting it privately to ChatGPT is a remaining step for the first release, not a current capability. Read and write operations have also been exercised against a real account with explicitly marked test data; automated tests use a mocked API and do not alter a real account.
@@ -20,7 +20,7 @@ The implementation works locally. Connecting it privately to ChatGPT is a remain
 | Work | Useful result |
 | --- | --- |
 | Connect a private ChatGPT MCP client | The same read, preview, and explicitly requested write flows work from ChatGPT as well as a local client. |
-| Validate the optional Docker setup | The documented stdio container builds from the lockfile and starts in demo mode. |
+| Validate the optional Docker setup | The documented stdio container builds from the lockfile and connects to Hevy with a locally supplied key. |
 | Improve large-history synchronization | Reports can avoid repeated full-history downloads while handling Hevy workout updates, deletions, incomplete syncs, and recovery. |
 | Improve the weekly analysis | The user can inspect the evidence behind comparisons and identify gaps or ambiguous exercise classifications. |
 
@@ -38,9 +38,20 @@ These are candidate work items, not a claim that any are already complete. Synch
 
 The exact source, storage model, and scope of recommendations remain open.
 
+## Planned iOS app: Apple Health synchronization
+
+**Goal:** make selected iPhone and Apple Watch health data available to Fitness Hub with the owner's permission. This is a planned stream of work; its timing relative to the second release is undecided.
+
+- Choose a first useful data type and establish the HealthKit authorization and synchronization flow in an iOS app.
+- Connect the app to Fitness Hub through a gateway or ingestion service; evaluate Open Wearables as an initial gateway before deciding whether a smaller custom backend is needed.
+- Show permissions, synchronization status, the last successful sync, and actionable errors. Allow the user to control synchronization.
+- Add reliable incremental updates, duplicate handling, and deletion propagation as the integration develops. Background synchronization must account for iOS scheduling limits.
+- Expand to additional useful data, such as body weight, sleep, or activity, only after verifying data quality and source coverage. Handle overlapping iPhone and Apple Watch samples before presenting combined totals.
+
+The iOS app may later provide a broader interface for exploring data and goals, but the initial sync scope does not depend on that decision.
+
 ## Later possibilities
 
-- Add sleep, recovery, and activity data through Open Wearables when a useful scenario and reliable data are available.
 - Build a user interface for exploring history, trends, and goals. Its timing relative to recovery data is undecided.
 - Add scenario-based planning with clear assumptions and the ability to revise projections.
-- Consider alternative Apple Health ingestion or multi-user support only when there is a demonstrated need.
+- Consider multi-user support only when there is a demonstrated need.

@@ -30,9 +30,6 @@ class Settings(BaseSettings):
         repr=False,
         description="API key for Hevy API",
     )
-    fitness_demo_mode: bool = Field(
-        default=False, description="Use fictional local workouts instead of the Hevy API"
-    )
     fitness_timezone: str = Field(default="Europe/Warsaw", description="Report timezone")
     fitness_cache_seconds: int = Field(default=300, ge=0, description="In-memory cache TTL")
 

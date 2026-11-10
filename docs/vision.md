@@ -27,6 +27,6 @@ Fitness data is scattered across applications. It takes time to assemble the ful
 
 ## Scope and direction
 
-The first release focuses on strength training from Hevy. The second planned release adds nutrition and body weight. Future possibilities include recovery and activity data from Apple Health through Open Wearables, a user interface, and planning features. Their order depends on usefulness and data availability.
+The first release focuses on strength training from Hevy. The second planned release adds nutrition and body weight. A planned iOS app will let the owner authorize and synchronize selected Apple Health data from an iPhone, including data collected by a paired Apple Watch. Open Wearables may serve as the initial gateway. A broader user interface and planning features remain future possibilities; their timing depends on usefulness and data availability.
 
 The system is not intended to make medical diagnoses or to assert that a calculated score measures central nervous system fatigue. Recommendations and projections require suitable evidence, context, and explicit limitations.

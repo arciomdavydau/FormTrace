@@ -4,6 +4,5 @@ services:
     build: .
     stdin_open: true
     environment:
-      FITNESS_DEMO_MODE: ${FITNESS_DEMO_MODE:-true}
       FITNESS_TIMEZONE: ${FITNESS_TIMEZONE:-Europe/Warsaw}
       HEVY_API_KEY: ${HEVY_API_KEY:-}

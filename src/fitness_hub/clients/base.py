@@ -4,15 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import re
 from typing import Any
 
 import httpx
 
 logger = logging.getLogger(__name__)
-_EXERCISE_ID = re.compile(
-    r"(?:[0-9]+|[0-9a-fA-F]{8}|[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})"
-)
 
 
 class UpstreamAPIError(Exception):
@@ -90,6 +86,20 @@ class BaseAsyncClient:
     ) -> None:
         await self.close()
 
+    def _decode_response(
+        self, response: httpx.Response, *, method: str, url: str
+    ) -> dict[str, Any] | list[Any]:
+        """Decode a successful response, allowing providers to handle their own formats."""
+        try:
+            return response.json()  # type: ignore[no-any-return]
+        except ValueError as err:
+            outcome = (
+                " The write may have succeeded; verify before retrying."
+                if method.upper() not in {"GET", "HEAD"}
+                else ""
+            )
+            raise UpstreamAPIError(f"Invalid JSON response from {url}.{outcome}") from err
+
     async def request(
         self,
         method: str,
@@ -98,7 +108,6 @@ class BaseAsyncClient:
         headers: dict[str, str] | None = None,
         params: dict[str, Any] | None = None,
         json: Any = None,
-        accept_plain_identifier: bool = False,
         **kwargs: Any,
     ) -> dict[str, Any] | list[Any]:
         """
@@ -197,24 +206,7 @@ class BaseAsyncClient:
                 if response.status_code == 204 or not response.content:
                     return {}
 
-                try:
-                    decoded = response.json()
-                    if accept_plain_identifier and isinstance(decoded, (str, int)):
-                        identifier = str(decoded)
-                        if _EXERCISE_ID.fullmatch(identifier):
-                            return {"id": identifier}
-                    return decoded  # type: ignore[no-any-return]
-                except ValueError as err:
-                    if accept_plain_identifier:
-                        identifier = response.text.strip()
-                        if _EXERCISE_ID.fullmatch(identifier):
-                            return {"id": identifier}
-                    outcome = (
-                        " The write may have succeeded; verify before retrying."
-                        if method.upper() not in {"GET", "HEAD"}
-                        else ""
-                    )
-                    raise UpstreamAPIError(f"Invalid JSON response from {url}.{outcome}") from err
+                return self._decode_response(response, method=method, url=url)
 
             except (httpx.TimeoutException, httpx.NetworkError) as err:
                 if attempt < attempt_limit:
