@@ -5,6 +5,7 @@ These are working decisions for the personal project. They can change as new inf
 ## Agreed
 
 - Build for personal use first, with potential value to others later.
+- License FormTrace under the MIT License.
 - Begin with Hevy strength training. MyFitnessPal nutrition and body weight are the next integration phase.
 - In parallel with MyFitnessPal work, extend Hevy training analytics and build an initial persistence and synchronization foundation for workout history.
 - Aim for a unified fitness context across training, nutrition, weight, activity, and recovery, with repeatable calculations and access to the supporting records.
@@ -27,4 +28,4 @@ These are working decisions for the personal project. They can change as new inf
 - Which iOS framework, synchronization approach, and initial Apple Health data types should the app use? Which parts of the existing Open Wearables setup are worth reusing?
 - Which recovery metrics and evidence would justify a readiness estimate, and when should the system decline to produce one?
 - Is there a future need for multi-user support?
-- Which license should the project use, and what conditions apply to publication and any external program?
+- What conditions apply to participation in any external program?

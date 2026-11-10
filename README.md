@@ -113,3 +113,7 @@ Tests use fictional JSON fixtures, HTTP mocks, and an isolated stdio server conn
 6. **Recovery and planning:** research explainable readiness and personal planning scenarios, then grow the user interface according to actual needs.
 
 This roadmap describes intent, not features already implemented. The project currently targets one user. Hosting, authentication for remote access, multiple users and a web application are future work.
+
+## License
+
+FormTrace is licensed under the [MIT License](LICENSE).

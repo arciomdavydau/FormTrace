@@ -4,6 +4,8 @@ version = "0.1.0"
 description = "Hevy workout and routine management with training analytics for MCP clients."
 readme = "README.md"
 requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
 dependencies = [
     "fastmcp>=4.1,<5",
     "httpx>=0.27.0",
