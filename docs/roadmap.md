@@ -1,6 +1,6 @@
 # Roadmap
 
-This is an iterative plan for a personal project, not a schedule. The direction is Hevy, then MyFitnessPal, then an owned Apple Health data backend and iOS app. Later analysis and interfaces build on those sources. Each phase should deliver a usable result for the owner; scope can change when integrations and real usage are better understood.
+This is an iterative plan for a personal project, not a schedule. MyFitnessPal is the next source integration; expanded Hevy analysis and an initial persistent workout store can progress in parallel. The later direction is an owned Apple Health data backend and iOS app, followed by broader cross-source analysis and interfaces. Each phase should deliver a usable result for the owner; scope can change when integrations and real usage are better understood.
 
 ## Phase 1: Hevy training and routines
 
@@ -16,22 +16,31 @@ The following capabilities already work locally:
 
 Read and write operations have been exercised against a real account with explicitly marked test data; automated tests use a mocked API and do not alter a real account. Connecting privately to ChatGPT remains an open task, not a current capability; it does not block starting the next phase. MyFitnessPal is the next source to investigate and implement.
 
-### Near-term backlog
+## Near-term work in parallel
+
+These tasks can progress alongside the next source integration.
 
 | Work | Useful result |
 | --- | --- |
 | Connect a private ChatGPT MCP client | The same read, preview, and explicitly requested write flows work from ChatGPT as well as a local client. |
 | Validate the optional Docker setup | The documented stdio container builds from the lockfile and connects to Hevy with a locally supplied key. |
-| Improve the weekly analysis | The user can inspect the evidence behind comparisons and identify gaps or ambiguous exercise classifications. |
+| Extend training analysis | The user can inspect recorded external workload and exercise trends, with missing values, units, and unsupported sets made explicit. Explore a suitable estimated 1RM formula and define its limitations. |
+| Start persistent Hevy history | Store workout records and sync metadata with migrations, source identifiers, and duplicate-safe repeated imports. Test updates, interrupted syncs, persistence after restart, and source completeness before relying on stored reports. |
+| Develop nutrition models | Build normalized Pydantic models and daily or weekly summaries against fictional fixtures while investigating MyFitnessPal access. Implement a real connector or supported import once its format and availability are established. |
+
+**Initial milestones:** an owner can inspect the calculation behind a workout workload summary, and a test import can be repeated and survive a restart without duplicate records. Initial work on estimated strength and nutrition summaries should include representative tests and make assumptions or missing data visible. Researching a plateau indicator is a separate follow-up requiring defined criteria and sufficient history.
+
+SQLite is a candidate for local storage and PostgreSQL is another option; the database, schema, and synchronization strategy remain to be chosen. The existing process-local Hevy cache continues to be the current implementation. A persistent store may gradually replace or complement it once freshness, completeness, and write invalidation are handled reliably.
 
 ## Phase 2: MyFitnessPal nutrition and body weight
 
 **Goal:** make the owner's MyFitnessPal nutrition data available alongside Hevy training data, then add weight history where a suitable source is available. This is the next integration to develop; it is not implemented yet.
 
 1. **Access and data discovery:** verify authentication, available data, permitted use, API access, and the owner's account capabilities. Select a viable way to read the diary before designing around a particular endpoint or library.
-2. **Connector or import:** build a source adapter for the selected access method. If direct access is unavailable, evaluate an explicit file import as an interim path; it is not automatic synchronization.
-3. **Nutrition and weight tools:** expose recorded meals or meal summaries, calories and macronutrients where available, and a useful daily or weekly summary. Add weight history from MyFitnessPal or another suitable source. Preserve units, time zone, source, freshness, and missing days.
-4. **Validation:** use fictional fixtures and API or file mocks, test failures and incomplete records, and compare results with the owner's own source data. Keep credentials and personal exports outside the repository.
+2. **Models and aggregation:** in parallel with access discovery, define Pydantic nutrition models and calculate daily or weekly totals from fictional fixtures. Preserve missing values, units, source, and time zone.
+3. **Connector or import:** build a source adapter for the selected access method. If direct access is unavailable, evaluate an explicit CSV import as an interim path; it is not automatic synchronization. Consider JSON only when a suitable source provides that format.
+4. **Nutrition and weight tools:** expose recorded meals or meal summaries, calories and macronutrients where available, and a useful daily or weekly summary. Add weight history from MyFitnessPal or another suitable source. Preserve freshness and missing days.
+5. **Validation:** use fictional fixtures and API or file mocks, test failures and incomplete records, and compare results with the owner's own source data. Keep credentials and personal exports outside the repository.
 
 **Milestone:** the owner can ask an MCP client about recorded nutrition for a period and inspect where the numbers came from. Weight trends are included once a suitable source is established.
 
@@ -50,7 +59,7 @@ Existing unofficial clients such as [python-myfitnesspal](https://github.com/cod
 
 **Milestone:** a test client can send a supported health record to the API, repeat the upload without creating a duplicate, restart the service, and retrieve the stored record. The backend can be built and tested before the iOS app exists.
 
-This durable health-data store is part of the Apple Health work. Persisting or incrementally synchronizing the existing Hevy cache is a separate, later decision.
+This durable health-data store is part of the Apple Health work. The initial Hevy persistence work starts earlier; whether it provides reusable components for this backend remains open.
 
 ## Phase 4: iPhone app and Apple Health synchronization
 
@@ -70,8 +79,8 @@ This durable health-data store is part of the Apple Health work. Persisting or i
 
 **Goal:** answer questions that combine recorded workouts, food, weight, and available health data, with repeatable calculations and access to the evidence.
 
-1. Calculate recorded external workload as the sum of weight multiplied by repetitions for eligible working sets. Exclude warmups and report incomplete or unsupported sets rather than treating them as zero. Define handling for units, unilateral sets, machine exercises, and bodyweight records.
-2. Explore exercise-level progression and optional grouping by Hevy muscle classification. Classifications are not measurements of muscle load; primary and secondary groups overlap. Evaluate estimated 1RM formulas, including Epley and Brzycki, for suitable sets with explicit assumptions. Do not assume unrecorded sets were performed to failure. A [bench-press validation study](https://pubmed.ncbi.nlm.nih.gov/7500624/) illustrates both over- and underestimation.
+1. Extend the initial external workload calculation and exercise-level trends across suitable periods. Recorded external workload is the sum of weight multiplied by repetitions across eligible working sets. Exclude warmups and report incomplete or unsupported sets rather than treating them as zero. Define handling for units, unilateral sets, machine exercises, and bodyweight records.
+2. Extend the initial estimated-strength work and explore optional grouping by Hevy muscle classification. Classifications are not measurements of muscle load; primary and secondary groups overlap. Evaluate estimated 1RM formulas, including Epley and Brzycki, for suitable sets with explicit assumptions. Do not assume unrecorded sets were performed to failure. A [bench-press validation study](https://pubmed.ncbi.nlm.nih.gov/7500624/) illustrates both over- and underestimation.
 3. Compare training, food logs, and weight trends over useful periods without presenting estimates as measured facts. Expose source, time period, freshness, missing records, and the data behind each result.
 4. Add focused MCP tools and a concise cross-source context tool when the underlying sources are ready. Report partial source failures rather than silently presenting incomplete information as complete.
 5. Extend tests with known calculations, representative exercise types, missing data, source failures, and overlapping or inconsistent records.
@@ -97,11 +106,11 @@ This is exploratory work. Metrics, calculation, validation method, and presentat
 - Support an interface for exploring history, trends, and goals alongside MCP-based assistants. The iOS sync app may eventually provide part of this interface.
 - Evaluate whether combined tools reduce repeated calls and context size in actual usage; keep the focused tools for inspecting records.
 
-## Later: Hevy and nutrition synchronization
+## Synchronization beyond initial Hevy storage
 
-The current Hevy analytics cache is process-local and reloads the full history when it expires. The new health-data backend will persist Apple Health observations; extending storage and incremental synchronization to Hevy or nutrition data is a separate future task.
+The current Hevy analytics cache is process-local and reloads the full history when it expires. Initial persistent Hevy records and sync metadata are near-term work. More advanced incremental synchronization and nutrition persistence can follow when source capabilities and the initial storage design are understood.
 
-- Investigate source-specific incremental updates and whether the health-data store or another solution should be reused.
+- Investigate source-specific incremental updates and whether early Hevy storage, the later health-data store, or another solution should be reused.
 - Design for updated and deleted records, duplicate imports, interrupted syncs, recovery, and source reconciliation before relying on stored data as complete.
 
 ## Later possibilities

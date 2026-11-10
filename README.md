@@ -105,8 +105,8 @@ Tests use fictional JSON fixtures, HTTP mocks, and an isolated stdio server conn
 
 ## Direction
 
-1. **Hevy:** the local training and routine integration is implemented; protected ChatGPT access remains planned.
-2. **MyFitnessPal:** investigate viable access or import, then expose nutrition and weight records.
+1. **Hevy:** the local training and routine integration is implemented. Expand training calculations and start a persistent storage foundation in parallel with nutrition work; protected ChatGPT access remains planned.
+2. **MyFitnessPal:** investigate viable access or import while building nutrition models and summaries, then expose available nutrition and weight records.
 3. **Health backend:** build FormTrace models, an API, and durable storage for Apple Health observations.
 4. **iOS synchronization:** build an iPhone app that reads authorized HealthKit data and sends it to the backend.
 5. **Unified analysis:** combine training, nutrition, weight, and available health data in repeatable calculations and MCP context.

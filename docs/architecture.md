@@ -36,7 +36,7 @@ The following is a direction for future versions, not a description of features 
 
 Each adapter owns provider-specific authentication, formats, pagination, and errors. The application layer should preserve source, timestamps, units, measurement type, and known coverage. It should not merge conflicting or overlapping records until a source-specific rule is defined.
 
-The intended sequence is to add MyFitnessPal first, then build the FormTrace health-data backend and its iOS client as separate milestones. The MyFitnessPal phase does not depend on completing the new Apple Health backend. Which sources beyond Apple Health use the durable store can be decided as needed.
+The next source integration is MyFitnessPal. Training calculations and an initial persistent Hevy history can be developed in parallel, without waiting for the new Apple Health backend. After nutrition, build the FormTrace health-data backend and its iOS client as separate milestones. Whether the early Hevy storage and Apple Health backend share infrastructure remains open.
 
 Focused tools should remain available for inspecting records. Composite tools may later assemble a concise context for questions spanning multiple domains. They should include per-source freshness and completeness and make partial failures visible. Independent source requests may be parallelized where useful, with bounded timeouts and error handling; the current Hevy analytics snapshot loads workouts and templates sequentially.
 
@@ -65,7 +65,13 @@ The hub validates and publishes Pydantic-derived MCP output schemas for its anal
 
 The Hevy client fetches workout pages and exercise templates. The API limits the size of workout pages, so the current implementation loads all pages and filters by date locally. A failed page prevents a successful complete report. Since Hevy data can change while pages are being read, the result is not guaranteed to be an atomic snapshot.
 
-A process-local cache reduces repeated analytical reads; each result includes its provider and fetch time. It is invalidated after a write attempt, including an uncertain outcome. It is not persistent storage, and separate processes do not share it. Persisting the Hevy history is a separate future decision from the planned Apple Health data store.
+A process-local cache reduces repeated analytical reads; each result includes its provider and fetch time. It is invalidated after a write attempt, including an uncertain outcome. It is not persistent storage, and separate processes do not share it. Initial persistence for Hevy history is planned as near-term work; it is distinct from the later Apple Health ingestion backend.
+
+## Planned Hevy persistence foundation
+
+Start with durable workout records, migrations, and synchronization metadata. Preserve source identifiers, fetch time, and known coverage. Repeated imports should update the appropriate record without creating duplicates. Define how changes, deletions, interrupted imports, and uncertain write outcomes affect stored data before using it as the basis for reports. An incomplete fetch must not be silently presented as a complete history.
+
+Add tests for repeated imports, updates, failures, and persistence after restart. The current memory cache can coexist with persistent storage until read, freshness, and invalidation behavior are reliable. The database, synchronization strategy, and any reuse by the Apple Health backend remain open; SQLite and PostgreSQL are candidates, not decisions already made. No persistent Hevy store exists today.
 
 ## Training calculations
 
@@ -75,7 +81,7 @@ A process-local cache reduces repeated analytical reads; each result includes it
 - Exercise progression shows recorded sets, weights, repetitions, and RPE where available. Missing values remain missing; the service does not infer muscle gain or automatically label a change in weight or repetitions as progress.
 - Reports use inclusive local calendar dates and assign a workout to the date on which it started in the chosen time zone. The previous comparison period has the same number of days.
 
-Planned extensions may calculate recorded external workload and estimate a one-repetition maximum from suitable sets. The design must distinguish recorded values from estimates, document formula assumptions, and handle warmups, incomplete sets, units, exercise types, and overlapping muscle classifications explicitly. These calculations are not implemented today.
+Near-term extensions will calculate recorded external workload and explore a one-repetition maximum estimate from suitable sets. The design must distinguish recorded values from estimates, document formula assumptions, and handle warmups, incomplete sets, units, exercise types, and overlapping muscle classifications explicitly. A possible plateau indicator requires a defined baseline and enough data before it can be useful. These calculations are not implemented today.
 
 ## Planned nutrition and recovery calculations
 
@@ -95,7 +101,7 @@ The project will need its own authenticated API and durable storage for Apple He
 
 Ingestion should preserve a stable source identifier, measurement type, time range, units, and available source or device metadata. Repeated delivery must not create duplicate records. Updates, deletions, invalid samples, partial batches, and interrupted synchronization need explicit semantics and tests. A retrieval API should make stored observations available to the application services and MCP tools.
 
-This backend and database are planned, not implemented. The current Hevy analytics cache remains a separate in-memory mechanism; storing and incrementally synchronizing the Hevy history is a later decision.
+This backend and its Apple Health ingestion API are planned, not implemented. The current Hevy analytics cache remains in memory; an initial persistent Hevy history is a separate near-term task. Whether either system reuses the same storage infrastructure is undecided.
 
 ## Planned Apple Health integration
 
@@ -118,4 +124,4 @@ The integration needs explicit permission and sync controls, a visible last-sync
 
 Nutrition and body weight belong to the planned second release. MyFitnessPal is the intended source for food logs. Its [documented CSV export](https://support.myfitnesspal.com/hc/en-us/articles/360032273352-Export-your-nutrition-progress-and-exercise-data) is a possible import route for Premium and Premium+ users; the available fields and any direct integration remain to be verified. Apple Health may be one source for body weight if useful.
 
-The Apple Health backend requires persistent storage in its planned phase. Whether Hevy and nutrition data should also be stored or incrementally synchronized, and on what schedule, remains open. Before relying on persisted data, design source-specific updates and deletions, duplicate handling, interrupted sync recovery, and reconciliation. Freshness and completeness must remain visible to callers.
+The near-term Hevy work and the later Apple Health backend both require persistent storage, with source-specific synchronization semantics. Whether they share storage and how nutrition data is retained remain open. Before relying on persisted data, design source-specific updates and deletions, duplicate handling, interrupted sync recovery, and reconciliation. Freshness and completeness must remain visible to callers.
