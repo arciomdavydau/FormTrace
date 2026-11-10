@@ -1,4 +1,4 @@
-"""Configuration settings for fitness-mcp-hub using Pydantic Settings."""
+"""Configuration settings for formtrace-mcp using Pydantic Settings."""
 
 from functools import lru_cache
 
@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     )
 
     # MCP Server
-    mcp_server_name: str = Field(default="fitness-mcp-hub", description="MCP server name")
+    mcp_server_name: str = Field(default="formtrace-mcp", description="MCP server name")
     log_level: str = Field(default="INFO", description="Logging level")
 
     # Hevy API

@@ -18,11 +18,11 @@ from fastmcp import Client
 from fastmcp.client.transports import StdioTransport
 from pydantic import ValidationError
 
-from fitness_hub.clients.hevy import HevyClient
-from fitness_hub.config import Settings
-from fitness_hub.models.responses import SnapshotSource, TrainingSummary
-from fitness_hub.server import create_server
-from fitness_hub.services.training import TrainingService
+from formtrace.clients.hevy import HevyClient
+from formtrace.config import Settings
+from formtrace.models.responses import SnapshotSource, TrainingSummary
+from formtrace.server import create_server
+from formtrace.services.training import TrainingService
 from tests.fakes import FakeTrainingSource
 from tests.helpers import assert_output_matches_schema
 
@@ -152,13 +152,19 @@ async def test_hevy_read_envelope_preserves_provider_fields_not_known_to_hub() -
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("start_method", ["module", "command"])
 async def test_real_stdio_server_uses_mocked_hevy_in_an_isolated_directory(
-    tmp_path: Path, local_hevy_server: tuple[str, list[str]]
+    tmp_path: Path, local_hevy_server: tuple[str, list[str]], start_method: str
 ) -> None:
     base_url, paths = local_hevy_server
+    if start_method == "module":
+        command, args = sys.executable, ["-m", "formtrace.server"]
+    else:
+        script_name = "formtrace-mcp.exe" if sys.platform == "win32" else "formtrace-mcp"
+        command, args = str(Path(sys.executable).with_name(script_name)), []
     transport = StdioTransport(
-        command=sys.executable,
-        args=["-m", "fitness_hub.server"],
+        command=command,
+        args=args,
         cwd=str(tmp_path),
         env={
             "HEVY_API_BASE_URL": base_url,

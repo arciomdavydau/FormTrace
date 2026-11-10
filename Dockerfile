@@ -10,4 +10,4 @@ RUN uv sync --frozen --no-dev
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1
 USER 10001:10001
-ENTRYPOINT ["fitness-mcp-hub"]
+ENTRYPOINT ["formtrace-mcp"]

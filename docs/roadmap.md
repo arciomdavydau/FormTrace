@@ -30,20 +30,21 @@ These are candidate work items, not a claim that any are already complete. Synch
 
 **Goal:** bring nutrition and weight into the same personal context as training.
 
-- Investigate the available sources for food logs and body-weight measurements.
+- Investigate MyFitnessPal as the intended source for food logs, including available data access and a suitable integration or import method.
+- Investigate available sources for body-weight measurements.
 - Add suitable integrations, import, or manual input according to what is actually available.
 - Show weight trends and nutrition summaries with clear coverage and provenance.
 - Explore questions that combine weight, nutrition, and training without presenting estimates as measured facts.
 - Define how missing food records and conflicting weight measurements affect the results shown to the user.
 
-The exact source, storage model, and scope of recommendations remain open.
+MyFitnessPal access and integration feasibility have not yet been verified. The weight source, storage model, and scope of recommendations remain open.
 
 ## Planned iOS app: Apple Health synchronization
 
-**Goal:** make selected iPhone and Apple Watch health data available to Fitness Hub with the owner's permission. This is a planned stream of work; its timing relative to the second release is undecided.
+**Goal:** make selected iPhone and Apple Watch health data available to FormTrace with the owner's permission. This is a planned stream of work; its timing relative to the second release is undecided.
 
 - Choose a first useful data type and establish the HealthKit authorization and synchronization flow in an iOS app.
-- Connect the app to Fitness Hub through a gateway or ingestion service; evaluate Open Wearables as an initial gateway before deciding whether a smaller custom backend is needed.
+- Connect the app to FormTrace through a gateway or ingestion service; evaluate Open Wearables as an initial gateway before deciding whether a smaller custom backend is needed.
 - Show permissions, synchronization status, the last successful sync, and actionable errors. Allow the user to control synchronization.
 - Add reliable incremental updates, duplicate handling, and deletion propagation as the integration develops. Background synchronization must account for iOS scheduling limits.
 - Expand to additional useful data, such as body weight, sleep, or activity, only after verifying data quality and source coverage. Handle overlapping iPhone and Apple Watch samples before presenting combined totals.

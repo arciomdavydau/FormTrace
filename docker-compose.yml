@@ -1,6 +1,6 @@
 # Optional local stdio container. This does not expose a network MCP server.
 services:
-  fitness-hub:
+  formtrace:
     build: .
     stdin_open: true
     environment:

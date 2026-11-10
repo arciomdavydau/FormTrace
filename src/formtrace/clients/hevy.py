@@ -8,9 +8,9 @@ from typing import Any
 
 import httpx
 
-from fitness_hub.clients.base import BaseAsyncClient, UpstreamAPIError
-from fitness_hub.config import Settings, get_settings
-from fitness_hub.models.workouts import (
+from formtrace.clients.base import BaseAsyncClient, UpstreamAPIError
+from formtrace.config import Settings, get_settings
+from formtrace.models.workouts import (
     ExerciseLog,
     ExerciseSet,
     SetType,

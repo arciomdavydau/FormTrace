@@ -1,5 +1,5 @@
 [project]
-name = "fitness-mcp-hub"
+name = "formtrace"
 version = "0.1.0"
 description = "Hevy workout and routine management with training analytics for MCP clients."
 readme = "README.md"
@@ -13,14 +13,14 @@ dependencies = [
 ]
 
 [project.scripts]
-fitness-mcp-hub = "fitness_hub.server:main"
+formtrace-mcp = "formtrace.server:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/fitness_hub"]
+packages = ["src/formtrace"]
 
 [dependency-groups]
 dev = [

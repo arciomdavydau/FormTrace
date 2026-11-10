@@ -6,7 +6,7 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from fitness_hub.models.hevy_inputs import (
+from formtrace.models.hevy_inputs import (
     ExerciseCreateInput,
     RoutineCreateInput,
     RoutineFolderCreateInput,
@@ -14,9 +14,9 @@ from fitness_hub.models.hevy_inputs import (
     WorkoutCreateInput,
     WorkoutUpdateInput,
 )
-from fitness_hub.models.responses import HEVY_WRITE_OUTPUT_SCHEMA, HevyReadResult
-from fitness_hub.services.hevy import HevyOperations, aware_timestamp, page_params, resource_id
-from fitness_hub.services.training import TrainingService
+from formtrace.models.responses import HEVY_WRITE_OUTPUT_SCHEMA, HevyReadResult
+from formtrace.services.hevy import HevyOperations, aware_timestamp, page_params, resource_id
+from formtrace.services.training import TrainingService
 
 
 def register_hevy_tools(server: FastMCP, training: TrainingService) -> None:

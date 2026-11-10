@@ -8,14 +8,14 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from fitness_hub.models.hevy_inputs import RoutineCreateInput, WorkoutCreateInput
-from fitness_hub.models.responses import (
+from formtrace.models.hevy_inputs import RoutineCreateInput, WorkoutCreateInput
+from formtrace.models.responses import (
     DirectSource,
     HevyReadResult,
     HevyWritePreview,
     HevyWriteResult,
 )
-from fitness_hub.services.training import TrainingService
+from formtrace.services.training import TrainingService
 
 
 def resource_id(value: str) -> str:

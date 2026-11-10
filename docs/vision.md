@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Fitness Hub is a personal fitness system that brings together data from the services a person already uses and helps them understand training, body weight, nutrition, and recovery in the context of their goals.
+FormTrace is a personal fitness system that brings together data from the services a person already uses and helps them understand training, body weight, nutrition, and recovery in the context of their goals.
 
 The initial user is the project owner, who is using the system while working toward better fitness. The project may be useful to others in the future, but multi-user support is not a requirement for the initial releases.
 
@@ -27,6 +27,6 @@ Fitness data is scattered across applications. It takes time to assemble the ful
 
 ## Scope and direction
 
-The first release focuses on strength training from Hevy. The second planned release adds nutrition and body weight. A planned iOS app will let the owner authorize and synchronize selected Apple Health data from an iPhone, including data collected by a paired Apple Watch. Open Wearables may serve as the initial gateway. A broader user interface and planning features remain future possibilities; their timing depends on usefulness and data availability.
+The first release focuses on strength training from Hevy. The second planned release adds nutrition and body weight, with MyFitnessPal as the intended source for food logs if a suitable integration or import is available. A planned iOS app will let the owner authorize and synchronize selected Apple Health data from an iPhone, including data collected by a paired Apple Watch. Open Wearables may serve as the initial gateway. A broader user interface and planning features remain future possibilities; their timing depends on usefulness and data availability.
 
 The system is not intended to make medical diagnoses or to assert that a calculated score measures central nervous system fatigue. Recommendations and projections require suitable evidence, context, and explicit limitations.

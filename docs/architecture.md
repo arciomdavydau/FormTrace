@@ -9,12 +9,12 @@ This document describes the intended structure of the product and distinguishes 
 
  Hevy ─────────────────────────────┐       ┌─── MCP-compatible AI agent
  Nutrition (planned) ──────────────┤       │
- Body weight (planned) ────────────┼── Fitness Hub ─── Future user interface
+ Body weight (planned) ────────────┼── FormTrace ─── Future user interface
  Apple Health (planned via iOS) ───┤       │
  Manual input (later) ─────────────┘       └─── Other clients as needed
 ```
 
-Inside Fitness Hub, source adapters obtain data, application services organize use cases, and domain calculations produce reproducible results. Interfaces expose those results. The analytical core should remain usable without a specific AI model or client.
+Inside FormTrace, source adapters obtain data, application services organize use cases, and domain calculations produce reproducible results. Interfaces expose those results. The analytical core should remain usable without a specific AI model or client.
 
 A future user interface can call the same application services as the MCP interface. A planned iOS app will also collect authorized Apple Health data; whether it becomes the main user interface is undecided. The specific storage implementation is not fixed across the lifetime of the product.
 
@@ -69,11 +69,11 @@ Apple Health / HealthKit
 Planned iOS app
     │ secure synchronization
     ▼
-Gateway or ingestion service ──► Fitness Hub source adapter
+Gateway or ingestion service ──► FormTrace source adapter
 ```
 
 The iOS app is planned, not implemented. It will request access to selected HealthKit data and synchronize it to the hub through an ingestion path. Open Wearables is a possible initial gateway; a smaller dedicated ingestion service remains an option. The choice of iOS framework, transport, hosting, and storage is open.
 
 The integration needs explicit permission and sync controls, a visible last-sync status, and clear handling of failed or delayed synchronization. The design should account for updates and deletions, repeated uploads, and iOS background-execution limits. Preserve source and timestamp information: overlapping samples from different devices require a source-specific merging strategy before totals can be trusted.
 
-Nutrition and body weight belong to the planned second release. Their actual sources and import methods remain to be verified; Apple Health may be one source for body weight if useful.
+Nutrition and body weight belong to the planned second release. MyFitnessPal is the intended source for food logs, but its available access and the integration or import method remain to be verified. Apple Health may be one source for body weight if useful.

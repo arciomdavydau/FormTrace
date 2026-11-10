@@ -1,4 +1,4 @@
-# Fitness MCP Hub
+# FormTrace
 
 A personal fitness MCP server. The first version provides Hevy training and routine operations alongside workout analytics. Planned work includes nutrition, body weight, and an iOS app for Apple Health synchronization; a broader user interface is a future option.
 
@@ -6,7 +6,7 @@ This is an evolving personal project, not a medical or coaching system. Results 
 
 ## Why
 
-Workout logs are useful, but answering questions across multiple sessions can require a lot of manual comparison. Fitness MCP Hub brings the Hevy training API and repeatable calculations into one MCP server, so a person can ask an assistant for a weekly overview or an exercise's history while retaining visibility into the underlying records.
+Workout logs are useful, but answering questions across multiple sessions can require a lot of manual comparison. FormTrace brings the Hevy training API and repeatable calculations into one MCP server, so a person can ask an assistant for a weekly overview or an exercise's history while retaining visibility into the underlying records.
 
 ## What it does
 
@@ -31,7 +31,7 @@ Hevy's labels are an approximation of which muscles an exercise involves, not a 
 uv sync
 cp .env.example .env
 # Edit .env locally to add your Hevy API key.
-uv run fitness-mcp-hub
+uv run formtrace-mcp
 ```
 
 The command starts an MCP server over stdio; it waits for an MCP client rather than opening a human-readable console. Once connected, ask your client to summarize your training for a date range, or search for an exercise and inspect its history.
@@ -43,15 +43,17 @@ An example MCP client configuration (replace the directory with your checkout pa
 ```json
 {
   "mcpServers": {
-    "fitness-hub": {
+    "formtrace": {
       "command": "uv",
-      "args": ["run", "--directory", "/absolute/path/to/fitness-mcp-connector", "fitness-mcp-hub"]
+      "args": ["run", "--directory", "/absolute/path/to/formtrace", "formtrace-mcp"]
     }
   }
 }
 ```
 
 Clients differ in configuration format and how they find `uv`; see your client's documentation. The server uses the separate `fastmcp` package. Its exact dependency versions are recorded in `uv.lock`.
+
+If you already configured the server under its previous name, replace the `fitness-mcp-hub` command in your MCP client with `formtrace-mcp` and retain the path to your checkout. Existing `HEVY_API_KEY`, `FITNESS_TIMEZONE`, and `FITNESS_CACHE_SECONDS` settings remain valid.
 
 The server can write to Hevy when a write tool is called with `dry_run=false`. The Hevy API key may have broader permissions than the tools expose. Keep it private and rotate it if exposed. `FITNESS_TIMEZONE` sets the default IANA timezone, currently `Europe/Warsaw`.
 
@@ -104,7 +106,7 @@ Tests use fictional JSON fixtures, HTTP mocks, and an isolated stdio server conn
 ## Direction
 
 1. **Training:** reliable Hevy import and useful summaries through an MCP client.
-2. **Nutrition and weight:** investigate available sources and connect them to training context.
+2. **Nutrition and weight:** investigate MyFitnessPal integration for food logs and suitable sources for body weight, then connect them to training context.
 3. **iOS app:** synchronize authorized Apple Health data through a gateway, potentially Open Wearables. Its timing relative to the second release is undecided.
 4. **Later:** consider a broader user interface and planning features according to actual needs.
 

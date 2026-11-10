@@ -11,17 +11,17 @@ import respx
 from fastmcp import Client
 from pydantic import ValidationError
 
-from fitness_hub.clients.base import BaseAsyncClient, RateLimitError, UpstreamAPIError
-from fitness_hub.clients.hevy import HevyClient
-from fitness_hub.config import Settings
-from fitness_hub.models.hevy_inputs import (
+from formtrace.clients.base import BaseAsyncClient, RateLimitError, UpstreamAPIError
+from formtrace.clients.hevy import HevyClient
+from formtrace.config import Settings
+from formtrace.models.hevy_inputs import (
     RoutineUpdateInput,
     WorkoutCreateInput,
     WorkoutUpdateInput,
 )
-from fitness_hub.server import create_server
-from fitness_hub.services.hevy import HevyOperations
-from fitness_hub.services.training import TrainingService
+from formtrace.server import create_server
+from formtrace.services.hevy import HevyOperations
+from formtrace.services.training import TrainingService
 from tests.fakes import FakeTrainingSource
 from tests.helpers import assert_output_matches_schema
 

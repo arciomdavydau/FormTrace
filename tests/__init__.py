@@ -1,1 +1,1 @@
-"""Test suite for fitness_hub."""
+"""Test suite for formtrace."""

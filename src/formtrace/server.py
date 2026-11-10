@@ -10,16 +10,16 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from fitness_hub.clients.hevy import HevyClient
-from fitness_hub.config import get_settings
-from fitness_hub.hevy_tools import register_hevy_tools
-from fitness_hub.models.responses import (
+from formtrace.clients.hevy import HevyClient
+from formtrace.config import get_settings
+from formtrace.hevy_tools import register_hevy_tools
+from formtrace.models.responses import (
     ExerciseProgressionReport,
     ExerciseSearchResult,
     TrainingReport,
     WorkoutDetails,
 )
-from fitness_hub.services.training import TrainingService
+from formtrace.services.training import TrainingService
 
 
 def create_server(service: TrainingService | None = None) -> FastMCP:
@@ -94,7 +94,7 @@ mcp = create_server()
 
 def main() -> None:
     """Serve a local MCP client via stdio; remote deployment is not configured."""
-    parser = argparse.ArgumentParser(description="Fitness Hub: Hevy workout MCP server")
+    parser = argparse.ArgumentParser(description="FormTrace: Hevy workout MCP server")
     parser.add_argument("--transport", choices=["stdio"], default="stdio")
     parser.parse_args()
     logging.basicConfig(

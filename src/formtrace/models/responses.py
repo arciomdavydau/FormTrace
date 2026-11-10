@@ -6,7 +6,7 @@ from typing import Annotated, Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 
-from fitness_hub.models.workouts import WorkoutSession
+from formtrace.models.workouts import WorkoutSession
 
 Count = Annotated[int, Field(ge=0)]
 

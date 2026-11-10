@@ -6,9 +6,9 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fitness_hub.clients.hevy import HevyClient
-from fitness_hub.config import Settings
-from fitness_hub.models.workouts import WorkoutSession
+from formtrace.clients.hevy import HevyClient
+from formtrace.config import Settings
+from formtrace.models.workouts import WorkoutSession
 
 _FIXTURES = Path(__file__).parent / "fixtures" / "hevy"
 

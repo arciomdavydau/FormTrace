@@ -10,14 +10,14 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any, Protocol
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fitness_hub.models.responses import (
+from formtrace.models.responses import (
     ExerciseProgressionReport,
     ExerciseSearchResult,
     SnapshotSource,
     TrainingReport,
     WorkoutDetails,
 )
-from fitness_hub.models.workouts import SetType, WorkoutSession
+from formtrace.models.workouts import SetType, WorkoutSession
 
 MUSCLES = {
     "abdominals",

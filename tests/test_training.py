@@ -9,12 +9,12 @@ import pytest
 import respx
 from fastmcp import Client
 
-from fitness_hub.clients.base import UpstreamAPIError
-from fitness_hub.clients.hevy import HevyClient
-from fitness_hub.config import Settings
-from fitness_hub.models.workouts import ExerciseLog, ExerciseSet, SetType, WorkoutSession
-from fitness_hub.server import create_server
-from fitness_hub.services.training import TrainingService
+from formtrace.clients.base import UpstreamAPIError
+from formtrace.clients.hevy import HevyClient
+from formtrace.config import Settings
+from formtrace.models.workouts import ExerciseLog, ExerciseSet, SetType, WorkoutSession
+from formtrace.server import create_server
+from formtrace.services.training import TrainingService
 from tests.fakes import FakeTrainingSource
 
 

@@ -10,7 +10,7 @@ import httpx
 import pytest
 import respx
 
-from fitness_hub.config import Settings
+from formtrace.config import Settings
 
 _FIXTURES = Path(__file__).parent / "fixtures" / "hevy"
 
@@ -19,7 +19,7 @@ _FIXTURES = Path(__file__).parent / "fixtures" / "hevy"
 def mock_settings() -> Settings:
     return Settings(
         _env_file=None,
-        mcp_server_name="test-fitness-mcp-hub",
+        mcp_server_name="test-formtrace-mcp",
         hevy_api_base_url="https://api.hevyapp.com/v1",
         hevy_api_key="mock-hevy-api-key",
         request_timeout=5.0,
