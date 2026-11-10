@@ -5,20 +5,24 @@ These are working decisions for the personal project. They can change as new inf
 ## Agreed
 
 - Build for personal use first, with potential value to others later.
-- Begin with Hevy strength training. Plan nutrition and body weight for the second release.
+- Begin with Hevy strength training. MyFitnessPal nutrition and body weight are the next integration phase.
+- Aim for a unified fitness context across training, nutrition, weight, activity, and recovery, with repeatable calculations and access to the supporting records.
 - Target MyFitnessPal as the source for nutrition logs, subject to verifying available access and a suitable integration or import method.
 - Support interaction through AI agents via MCP, with a separate user interface as a future option.
 - Keep calculations and application scenarios separate from the interface so they can be reused.
-- Plan an iOS app to synchronize authorized Apple Health data from an iPhone. Consider Open Wearables as an initial gateway; a smaller dedicated ingestion service remains an option.
+- Build a FormTrace backend with models, an API, and durable storage for Apple Health data, then build an iOS app that sends authorized HealthKit data to it. Keep these as separate milestones.
+- The existing Open Wearables setup may remain a temporary gateway or reference while the owned backend and app are developed.
+- Keep the current Hevy cache and the future Apple Health data store conceptually separate; persistent Hevy synchronization remains later work.
 - Support both reading and changing Hevy workouts and routines in the first release. Write tools preview by default; distinguish recorded data from estimates.
-- Avoid an unvalidated readiness or central nervous system fatigue score.
+- Research an explainable readiness estimate based on available recovery metrics, with visible assumptions, source quality, and limitations. Do not present it as a measurement of central nervous system fatigue or as a medical diagnosis.
 - Develop in small increments and retain clear provenance, data limitations, and tests for meaningful calculations.
 
 ## Still open
 
 - What MyFitnessPal data can be accessed or imported reliably and under acceptable terms? Which body-weight sources are suitable?
 - How should the private ChatGPT connection be configured and verified? When should a dedicated user interface be prioritized?
-- Which data should be stored persistently, and how should synchronization and deletion work?
-- Which iOS framework, gateway, synchronization approach, and initial Apple Health data types should the app use? When should this work start relative to nutrition and weight?
+- Which backend framework, database, hosting, backup and retention approach should support the Apple Health data store? Which other sources should eventually use it?
+- Which iOS framework, synchronization approach, and initial Apple Health data types should the app use? Which parts of the existing Open Wearables setup are worth reusing?
+- Which recovery metrics and evidence would justify a readiness estimate, and when should the system decline to produce one?
 - Is there a future need for multi-user support?
 - Which license should the project use, and what conditions apply to publication and any external program?

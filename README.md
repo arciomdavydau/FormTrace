@@ -1,12 +1,12 @@
 # FormTrace
 
-A personal fitness MCP server. The first version provides Hevy training and routine operations alongside workout analytics. Planned work includes nutrition, body weight, and an iOS app for Apple Health synchronization; a broader user interface is a future option.
+FormTrace is a personal fitness data hub, starting with a Hevy MCP server. The first version provides training and routine operations alongside workout analytics. Planned work includes MyFitnessPal, an owned health-data backend, Apple Health synchronization from an iPhone, and a broader user interface.
 
-This is an evolving personal project, not a medical or coaching system. Results are limited by what was actually recorded.
+This is an evolving personal project. Results depend on the available records and assumptions; the system is not intended to make medical diagnoses.
 
 ## Why
 
-Workout logs are useful, but answering questions across multiple sessions can require a lot of manual comparison. FormTrace brings the Hevy training API and repeatable calculations into one MCP server, so a person can ask an assistant for a weekly overview or an exercise's history while retaining visibility into the underlying records.
+Fitness data is scattered across workout, nutrition, and health applications. FormTrace aims to bring that context together and calculate repeatable summaries that an AI assistant or future interface can use. Today, it connects the Hevy training API to an MCP client, so a person can ask for a weekly overview or an exercise's history while retaining visibility into the underlying records. Other sources and cross-source briefings are planned, not implemented.
 
 ## What it does
 
@@ -94,7 +94,7 @@ uv run ruff format --check .
 uv run mypy src
 ```
 
-Tests use fictional JSON fixtures, HTTP mocks, and an isolated stdio server connected to a local mock API; they do not need a Hevy key or write to a real account. They verify MCP output schemas, pagination, retry behavior, and the analytical calculations. A GitHub Actions workflow is included for Python 3.11 and 3.12; it runs after the repository is published. Before sharing a development transcript, check it for secrets and health data. The optional Docker setup is for stdio only and has not yet been validated for this version.
+Tests use fictional JSON fixtures, HTTP mocks, and an isolated stdio server connected to a local mock API; they do not need a Hevy key or write to a real account. They verify MCP output schemas, pagination, retry behavior, and the analytical calculations. A GitHub Actions workflow runs these checks for Python 3.11 and 3.12. Before sharing a development transcript, check it for secrets and health data. The optional Docker setup is for stdio only and has not yet been validated for this version.
 
 ## Project documentation
 
@@ -105,9 +105,11 @@ Tests use fictional JSON fixtures, HTTP mocks, and an isolated stdio server conn
 
 ## Direction
 
-1. **Training:** reliable Hevy import and useful summaries through an MCP client.
-2. **Nutrition and weight:** investigate MyFitnessPal integration for food logs and suitable sources for body weight, then connect them to training context.
-3. **iOS app:** synchronize authorized Apple Health data through a gateway, potentially Open Wearables. Its timing relative to the second release is undecided.
-4. **Later:** consider a broader user interface and planning features according to actual needs.
+1. **Hevy:** the local training and routine integration is implemented; protected ChatGPT access remains planned.
+2. **MyFitnessPal:** investigate viable access or import, then expose nutrition and weight records.
+3. **Health backend:** build FormTrace models, an API, and durable storage for Apple Health observations.
+4. **iOS synchronization:** build an iPhone app that reads authorized HealthKit data and sends it to the backend.
+5. **Unified analysis:** combine training, nutrition, weight, and available health data in repeatable calculations and MCP context.
+6. **Recovery and planning:** research explainable readiness and personal planning scenarios, then grow the user interface according to actual needs.
 
 This roadmap describes intent, not features already implemented. The project currently targets one user. Hosting, authentication for remote access, multiple users and a web application are future work.
